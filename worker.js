@@ -32,6 +32,11 @@ const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
+// Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
+// muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
+// puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
+const CACHE_VERSION = "v2";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -65,7 +70,9 @@ export default {
     }
 
     const source = url.searchParams.get("source"); // "omniva" | "dpd" | "smartpost" | null (kõik)
-    const cacheKey = new Request(url.toString(), request);
+    const cacheUrl = new URL(url.toString());
+    cacheUrl.searchParams.set("_cv", CACHE_VERSION);
+    const cacheKey = new Request(cacheUrl.toString(), request);
     const cache = caches.default;
 
     const cached = await cache.match(cacheKey);
