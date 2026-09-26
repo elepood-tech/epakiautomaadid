@@ -1,0 +1,737 @@
+<title>Lähim Pakiautomaat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ===== Leaflet base (inlined, v1.9.4) ===== */
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile-container,.leaflet-pane>svg,.leaflet-pane>canvas,.leaflet-zoom-box,.leaflet-image-layer,.leaflet-layer{position:absolute;left:0;top:0}
+.leaflet-container{overflow:hidden}
+.leaflet-tile,.leaflet-marker-icon,.leaflet-marker-shadow{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-user-drag:none}
+.leaflet-tile::selection{background:transparent}
+.leaflet-safari .leaflet-tile{image-rendering:-webkit-optimize-contrast}
+.leaflet-safari .leaflet-tile-container{width:1600px;height:1600px;-webkit-transform-origin:0 0}
+.leaflet-marker-icon,.leaflet-marker-shadow{display:block}
+.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}
+.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-shadow-pane img,.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-image-layer,.leaflet-container .leaflet-tile{max-width:none!important;max-height:none!important;width:auto;padding:0}
+.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}
+.leaflet-container.leaflet-touch-zoom{-ms-touch-action:pan-x pan-y;touch-action:pan-x pan-y}
+.leaflet-container.leaflet-touch-drag{-ms-touch-action:pinch-zoom;touch-action:none;touch-action:pinch-zoom}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{-ms-touch-action:none;touch-action:none}
+.leaflet-container{-webkit-tap-highlight-color:transparent}
+.leaflet-container a{-webkit-tap-highlight-color:rgba(51,181,229,.4)}
+.leaflet-tile{filter:inherit;visibility:hidden}
+.leaflet-tile-loaded{visibility:inherit}
+.leaflet-zoom-box{width:0;height:0;box-sizing:border-box;z-index:800}
+.leaflet-overlay-pane svg{-moz-user-select:none}
+.leaflet-pane{z-index:400}
+.leaflet-tile-pane{z-index:200}
+.leaflet-overlay-pane{z-index:400}
+.leaflet-shadow-pane{z-index:500}
+.leaflet-marker-pane{z-index:600}
+.leaflet-tooltip-pane{z-index:650}
+.leaflet-popup-pane{z-index:700}
+.leaflet-map-pane canvas{z-index:100}
+.leaflet-map-pane svg{z-index:200}
+.leaflet-control{position:relative;z-index:800;pointer-events:auto}
+.leaflet-top,.leaflet-bottom{position:absolute;z-index:1000;pointer-events:none}
+.leaflet-top{top:0}
+.leaflet-right{right:0}
+.leaflet-bottom{bottom:0}
+.leaflet-left{left:0}
+.leaflet-control{float:left;clear:both}
+.leaflet-right .leaflet-control{float:right}
+.leaflet-top .leaflet-control{margin-top:10px}
+.leaflet-bottom .leaflet-control{margin-bottom:10px}
+.leaflet-left .leaflet-control{margin-left:10px}
+.leaflet-right .leaflet-control{margin-right:10px}
+.leaflet-fade-anim .leaflet-popup{opacity:0;transition:opacity .2s linear}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}
+.leaflet-zoom-animated{transform-origin:0 0}
+svg.leaflet-zoom-animated{will-change:transform}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}
+.leaflet-zoom-anim .leaflet-tile,.leaflet-pan-anim .leaflet-tile{transition:none}
+.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}
+.leaflet-interactive{cursor:pointer}
+.leaflet-grab{cursor:grab}
+.leaflet-crosshair,.leaflet-crosshair .leaflet-interactive{cursor:crosshair}
+.leaflet-popup-pane,.leaflet-control{cursor:auto}
+.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-interactive,.leaflet-dragging .leaflet-marker-draggable{cursor:grabbing}
+.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-image-layer,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}
+.leaflet-marker-icon.leaflet-interactive,.leaflet-image-layer.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive,svg.leaflet-image-layer.leaflet-interactive path{pointer-events:visiblePainted;pointer-events:auto}
+.leaflet-container{background:#ddd;outline-offset:1px}
+.leaflet-container a{color:#0078A8}
+.leaflet-zoom-box{border:2px dotted #38f;background:rgba(255,255,255,.5)}
+.leaflet-container{font-family:inherit;font-size:.75rem;line-height:1.5}
+.leaflet-bar{box-shadow:0 1px 5px rgba(0,0,0,.4);border-radius:8px;overflow:hidden}
+.leaflet-bar a{background-color:#fff;border-bottom:1px solid #e5e5e5;width:28px;height:28px;line-height:28px;display:block;text-align:center;text-decoration:none;color:#222}
+.leaflet-bar a:hover,.leaflet-bar a:focus{background-color:#f4f4f4}
+.leaflet-bar a.leaflet-disabled{cursor:default;background-color:#f4f4f4;color:#bbb}
+.leaflet-control-zoom-in,.leaflet-control-zoom-out{font:bold 16px monospace;text-indent:0}
+.leaflet-control-attribution{background:rgba(255,255,255,.85);margin:0;padding:1px 6px;font-size:10px;color:#333}
+.leaflet-control-attribution a{text-decoration:none}
+.leaflet-left .leaflet-control-scale{margin-left:5px}
+.leaflet-bottom .leaflet-control-scale{margin-bottom:5px}
+.leaflet-control-scale-line{border:2px solid #777;border-top:none;line-height:1.1;padding:2px 5px 1px;white-space:nowrap;box-sizing:border-box;background:rgba(255,255,255,.8)}
+.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}
+.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:10px}
+.leaflet-popup-content{margin:12px 16px;line-height:1.4;font-size:12.5px;min-height:1px}
+.leaflet-popup-content p{margin:.8em 0}
+.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}
+.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;pointer-events:auto;transform:rotate(45deg)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#fff;color:#222;box-shadow:0 3px 14px rgba(0,0,0,.35)}
+.leaflet-container a.leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;text-align:center;width:22px;height:22px;font:16px/22px sans-serif;color:#8a8a8a;text-decoration:none;background:transparent}
+.leaflet-container a.leaflet-popup-close-button:hover{color:#444}
+.leaflet-div-icon{background:transparent;border:none}
+.leaflet-tooltip{position:absolute;padding:6px;background-color:#fff;border:1px solid #fff;border-radius:3px;color:#222;white-space:nowrap;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+
+/* ===== Page tokens ===== */
+:root{
+  --bg:#eef2f0;
+  --surface:#ffffff;
+  --surface-2:#f4f7f5;
+  --ink:#152420;
+  --muted:#5b6c65;
+  --line:#d7e0db;
+  --accent:#ff5a1f;
+  --accent-ink:#ffffff;
+  --good:#1a8754;
+  --warn:#b8860b;
+  --bad:#c0392b;
+  --omniva:#005ea8;
+  --dpd:#dc0032;
+  --shadow:0 1px 2px rgba(21,36,32,.06), 0 8px 24px rgba(21,36,32,.06);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1613;
+    --surface:#161f1b;
+    --surface-2:#1b2521;
+    --ink:#e7efec;
+    --muted:#93a89f;
+    --line:#293530;
+    --accent:#ff7a45;
+    --accent-ink:#161200;
+    --good:#3fbd7c;
+    --warn:#e0b23e;
+    --bad:#e2685c;
+    --omniva:#5aa4e8;
+    --dpd:#ff5f7e;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1613;
+  --surface:#161f1b;
+  --surface-2:#1b2521;
+  --ink:#e7efec;
+  --muted:#93a89f;
+  --line:#293530;
+  --accent:#ff7a45;
+  --accent-ink:#161200;
+  --good:#3fbd7c;
+  --warn:#e0b23e;
+  --bad:#e2685c;
+  --omniva:#5aa4e8;
+  --dpd:#ff5f7e;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  padding-inline:16px;
+  padding-block:16px;
+}
+.mono{font-family:"IBM Plex Mono","SF Mono",Consolas,monospace}
+
+.wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px}
+header.top h1{font-size:1.35rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header.top .tag{
+  font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap;
+}
+header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
+
+.status-row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;font-size:.74rem;
+  border:1px solid var(--line);background:var(--surface);border-radius:999px;
+  padding:5px 10px 5px 8px;color:var(--muted);
+}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex:none}
+.chip.ok .dot{background:var(--good)}
+.chip.ok{color:var(--ink)}
+.chip.bad .dot{background:var(--bad)}
+.chip.bad{color:var(--bad)}
+.chip.loading .dot{background:var(--warn);animation:pulse 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.chip.loading .dot{animation:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.chip b{font-weight:600;color:var(--ink)}
+
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);
+}
+
+.searchbar{display:flex;flex-direction:column;gap:10px;padding:16px}
+.searchbar form{display:flex;gap:8px;flex-wrap:wrap}
+.searchbar input[type=text]{
+  flex:1 1 220px;min-width:0;padding:11px 13px;border-radius:9px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink);font-size:.95rem;
+}
+.searchbar input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+.searchbar button{
+  flex:none;padding:11px 18px;border-radius:9px;border:none;background:var(--accent);
+  color:var(--accent-ink);font-weight:600;font-size:.92rem;cursor:pointer;
+}
+.searchbar button:hover{filter:brightness(1.05)}
+.searchbar button:disabled{opacity:.55;cursor:default}
+.hint{font-size:.78rem;color:var(--muted)}
+.hint.error{color:var(--bad)}
+.hint.ok{color:var(--good)}
+
+.example-row{display:flex;flex-wrap:wrap;gap:6px}
+.example-row button{
+  font-size:.76rem;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  border-radius:999px;padding:5px 11px;cursor:pointer;
+}
+.example-row button:hover{color:var(--ink);border-color:var(--muted)}
+
+#matchPicker{
+  display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:9px;
+  padding:8px;background:var(--surface-2);
+}
+#matchPicker .picker-label{font-size:.76rem;color:var(--muted);padding:2px 4px 4px}
+#matchPicker button{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;
+  border:1px solid transparent;background:var(--surface);border-radius:7px;padding:7px 10px;cursor:pointer;
+}
+#matchPicker button:hover{border-color:var(--line);background:var(--surface-2)}
+#matchPicker button .m-name{font-size:.84rem;font-weight:600;display:flex;align-items:center;gap:6px}
+#matchPicker button .m-addr{font-size:.76rem;color:var(--muted)}
+
+.layout{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;align-items:start}
+@media (max-width:780px){.layout{grid-template-columns:1fr}}
+
+.results{display:flex;flex-direction:column;gap:0;max-height:640px;overflow-y:auto}
+.results .empty{padding:28px 18px;color:var(--muted);font-size:.88rem;text-align:center}
+.result-item{
+  display:flex;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer;
+  align-items:flex-start;
+}
+.result-item:last-child{border-bottom:none}
+.result-item:hover,.result-item.active{background:var(--surface-2)}
+.rank{
+  flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface-2);
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;
+  color:var(--muted);margin-top:2px;
+}
+.result-item.active .rank{background:var(--accent);color:var(--accent-ink)}
+.result-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.result-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.result-name{font-weight:600;font-size:.9rem;line-height:1.3}
+.badge{
+  flex:none;font-size:.63rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 7px;border-radius:5px;color:#fff;
+}
+.badge.omniva{background:var(--omniva)}
+.badge.dpd{background:var(--dpd)}
+.result-addr{font-size:.8rem;color:var(--muted)}
+.result-dist{font-size:.78rem;color:var(--ink);font-weight:600}
+.result-dist .mono{font-variant-numeric:tabular-nums}
+
+#map{
+  height:640px;width:100%;border-radius:14px;border:1px solid var(--line);
+  background:var(--surface-2);
+}
+@media (max-width:780px){#map{height:380px}}
+
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--ink)}
+.popup-title{font-weight:700;font-size:.85rem;margin-bottom:2px}
+.popup-addr{font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.popup-dist{font-size:.78rem;font-weight:600}
+
+.pin{
+  width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.4);
+  border:2px solid #fff;
+}
+.pin span{transform:rotate(45deg);font-size:11px;font-weight:800;color:#fff}
+.pin.user{background:var(--ink)}
+.pin.omniva{background:var(--omniva)}
+.pin.dpd{background:var(--dpd)}
+
+footer.note{font-size:.76rem;color:var(--muted);line-height:1.6;padding:2px 2px 4px}
+footer.note a{color:inherit}
+footer.note .src{
+  display:inline-flex;align-items:center;gap:5px;margin-right:12px;white-space:nowrap;
+}
+footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <h1>Lähim pakiautomaat</h1>
+    <span class="tag">Reaalajas andmed</span>
+    <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
+  </header>
+
+  <div class="status-row" id="statusRow">
+    <span class="chip loading" id="chipOmniva"><span class="dot"></span>Omniva andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipDpd"><span class="dot"></span>DPD andmed laadivad&hellip;</span>
+  </div>
+
+  <div class="panel searchbar">
+    <form id="searchForm">
+      <input type="text" id="addressInput" placeholder="Aadress või automaadi nimi, nt Põlva Selver" autocomplete="off" />
+      <button type="submit" id="searchBtn">Otsi</button>
+    </form>
+    <div class="example-row">
+      <span class="hint">Proovi:</span>
+      <button type="button" data-ex="Narva mnt 5, Tallinn">Narva mnt 5, Tallinn</button>
+      <button type="button" data-ex="Põlva Selver">Põlva Selver</button>
+      <button type="button" data-ex="Ülemiste keskus">Ülemiste keskus</button>
+    </div>
+    <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i.</div>
+    <div id="matchPicker" hidden></div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="results" id="results">
+        <div class="empty">Otsi aadress või automaadi nimi üleval, et näha lähimaid pakiautomaate.</div>
+      </div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <footer class="note">
+    <div style="margin-bottom:6px">
+      <span class="src"><span class="sw" style="background:var(--omniva)"></span>Omniva &mdash; omniva.ee/locations.json (läbi proxy)</span>
+      <span class="src"><span class="sw" style="background:var(--dpd)"></span>DPD &mdash; dpdbaltics.com/PickupParcelShopData.json (läbi proxy)</span>
+    </div>
+    Andmed tõmmatakse iga kord vahepealse Cloudflare Worker'i kaudu, mis puhverdab tulemuse 24 tunniks &mdash;
+    nii ei koormata Omniva ega DPD servereid iga külastaja peale. Kui mõni allikas ajutiselt ei vasta, langeb leht
+    tagasi väikese näidisvalimi peale (märgistatud punasega üleval). Kaardialus: OpenStreetMap.
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var WORKER_URL = "https://pakiautomaadid.roolikatted.workers.dev/lockers";
+  var WORKER_GEOCODE_URL = "https://pakiautomaadid.roolikatted.workers.dev/geocode";
+
+  var state = { omniva: null, dpd: null, omnivaErr: null, dpdErr: null, userPoint: null };
+
+  // Väike käsitsi kogutud valim päris Omniva locations.json kirjetest (26.09.2026 seisuga).
+  // Väli-nimed on jäetud samaks, mis päris API-l, et normaliseerimisfunktsioon jääks muutumatuks.
+  var OMNIVA_SAMPLE_DATA = [
+    { ZIP:"11701", NAME:"Arsenali postkontor", TYPE:"1", A1_NAME:"Harju maakond", A2_NAME:"Tallinn", X_COORDINATE:"24.717816", Y_COORDINATE:"59.451722" },
+    { ZIP:"50600", NAME:"Eedeni postkontor", TYPE:"1", A1_NAME:"Tartu maakond", A2_NAME:"Tartu linn", X_COORDINATE:"26.748826", Y_COORDINATE:"58.373434" },
+    { ZIP:"96238", NAME:"Audru osavallakeskuse pakiautomaat", TYPE:"0", A1_NAME:"Pärnu maakond", A2_NAME:"Pärnu linn", X_COORDINATE:"24.356026", Y_COORDINATE:"58.407879" },
+    { ZIP:"96328", NAME:"Are pakiautomaat", TYPE:"0", A1_NAME:"Pärnu maakond", A2_NAME:"Tori vald", X_COORDINATE:"24.564522", Y_COORDINATE:"58.518677" },
+    { ZIP:"96287", NAME:"Alatskivi Coop Konsumi pakiautomaat", TYPE:"0", A1_NAME:"Tartu maakond", A2_NAME:"Peipsiääre vald", X_COORDINATE:"27.132467", Y_COORDINATE:"58.600633" },
+    { ZIP:"96179", NAME:"Elva Arbimäe Coop Konsumi pakiautomaat", TYPE:"0", A1_NAME:"Tartu maakond", A2_NAME:"Elva vald", X_COORDINATE:"26.414144", Y_COORDINATE:"58.234123" },
+    { ZIP:"96047", NAME:"Elva Turuplatsi Coop Konsumi pakiautomaat", TYPE:"0", A1_NAME:"Tartu maakond", A2_NAME:"Elva vald", X_COORDINATE:"26.408822", Y_COORDINATE:"58.221047" },
+    { ZIP:"96280", NAME:"Aegviidu Meie kaupluse pakiautomaat", TYPE:"0", A1_NAME:"Harju maakond", A2_NAME:"Anija vald", X_COORDINATE:"25.606367", Y_COORDINATE:"59.288383" },
+    { ZIP:"96465", NAME:"Alliku pakiautomaat", TYPE:"0", A1_NAME:"Harju maakond", A2_NAME:"Saue vald", X_COORDINATE:"24.590392", Y_COORDINATE:"59.368121" },
+    { ZIP:"96204", NAME:"Aruküla Coop Konsumi pakiautomaat", TYPE:"0", A1_NAME:"Harju maakond", A2_NAME:"Raasiku vald", X_COORDINATE:"25.078314", Y_COORDINATE:"59.370973" }
+  ];
+
+  // Väike käsitsi kogutud valim päris DPD dpdbaltics.com/PickupParcelShopData.json kirjetest (26.09.2026 seisuga).
+  var DPD_SAMPLE_DATA = [
+    { parcelShopType:"PickupStation", zipCode:"17008", city:"TALLINN", companyShortName:"Automaat Tallinna Mustamäe keskus", street:"A. H. Tammsaare tee 104a", countryCode:"EE", latitude:"59.40842", longitude:"24.68807" },
+    { parcelShopType:"PickupStation", zipCode:"17015", city:"TALLINN", companyShortName:"Automaat Tallinna MustakiviSelver", street:"Mustakivi tee 3a", countryCode:"EE", latitude:"59.437985", longitude:"24.870307" },
+    { parcelShopType:"PickupStation", zipCode:"10913", city:"TALLINN", companyShortName:"Automaat Pääsküla Realkeskus", street:"Pärnu mnt 421", countryCode:"EE", latitude:"59.36921691", longitude:"24.63866214" },
+    { parcelShopType:"PickupStation", zipCode:"11913", city:"TALLINN", companyShortName:"Automaat Tallinna Mähe Grossi", street:"Randvere tee 115a", countryCode:"EE", latitude:"59.4912333", longitude:"24.8795233" },
+    { parcelShopType:"PickupStation", zipCode:"10916", city:"TALLINN", companyShortName:"Automaat Tallinna Pääsküla Rimi", street:"Pärnu mnt 453e", countryCode:"EE", latitude:"59.360973", longitude:"24.630409" },
+    { parcelShopType:"PickupStation", zipCode:"13914", city:"TALLINN", companyShortName:"Automaat Tallinna Priisle Selver", street:"Priisle tee 1", countryCode:"EE", latitude:"59.45444", longitude:"24.88542" },
+    { parcelShopType:"PickupStation", zipCode:"11417", city:"TALLINN", companyShortName:"Automaat Tallinna Paepargi Maxima", street:"Paepargi 57", countryCode:"EE", latitude:"59.43531", longitude:"24.811441" },
+    { parcelShopType:"PickupStation", zipCode:"13424", city:"TALLINN", companyShortName:"Automaat Tallinna Sõpruse Rimi", street:"Sõpruse pst 174", countryCode:"EE", latitude:"59.414748", longitude:"24.707221" },
+    { parcelShopType:"PickupStation", zipCode:"13519", city:"TALLINN", companyShortName:"Automaat Tallinna Astangu Maxima", street:"Astangu 27a", countryCode:"EE", latitude:"59.405185", longitude:"24.638352" },
+    { parcelShopType:"PickupStation", zipCode:"11911", city:"TALLINN", companyShortName:"Automaat Tallinna Pirita Selver", street:"Rummu tee 4", countryCode:"EE", latitude:"59.46275", longitude:"24.82696" },
+    { parcelShopType:"PickupStation", zipCode:"13620", city:"TALLINN", companyShortName:"Automaat Tallinna Pae Rimi", street:"Pae 76", countryCode:"EE", latitude:"59.43618", longitude:"24.82159" },
+    { parcelShopType:"PickupStation", zipCode:"10315", city:"TALLINN", companyShortName:"Automaat Tallinna Stroomi keskus", street:"Tuulemaa 20", countryCode:"EE", latitude:"59.44741", longitude:"24.69268" },
+    { parcelShopType:"PickupStation", zipCode:"11415", city:"TALLINN", companyShortName:"Automaat Tallinna Ülemiste keskus", street:"Suur-Sõjamäe 4", countryCode:"EE", latitude:"59.42289", longitude:"24.7947" },
+    { parcelShopType:"PickupStation", zipCode:"10132", city:"TALLINN", companyShortName:"Automaat Tallinna Arteri kvartal", street:"Liivalaia tn 36", countryCode:"EE", latitude:"59.4296", longitude:"24.759891" },
+    { parcelShopType:"PickupStation", zipCode:"12911", city:"TALLINN", companyShortName:"Automaat Tallinna Vilde Maxima XX", street:"E. Vilde tee 75/77", countryCode:"EE", latitude:"59.402729", longitude:"24.685826" },
+    { parcelShopType:"PickupStation", zipCode:"10617", city:"TALLINN", companyShortName:"Automaat Tallinna Marienthal Selver", street:"Mustamäe tee 16", countryCode:"EE", latitude:"59.422623", longitude:"24.696965" },
+    { parcelShopType:"PickupStation", zipCode:"51010", city:"TARTU", companyShortName:"Automaat Tartu Riiamäe Alexela", street:"Era 2", countryCode:"EE", latitude:"58.371813", longitude:"26.721543" },
+    { parcelShopType:"PickupStation", zipCode:"50106", city:"TARTU", companyShortName:"Automaat Sõbra Prisma", street:"Sõbra 58", countryCode:"EE", latitude:"58.36529052", longitude:"26.74327433" },
+    { parcelShopType:"PickupStation", zipCode:"50709", city:"TARTU", companyShortName:"Automaat Tartu Mõisavahe Konsum", street:"Mõisavahe 34c", countryCode:"EE", latitude:"58.371894", longitude:"26.779842" },
+    { parcelShopType:"PickupStation", zipCode:"80027", city:"PÄRNU", companyShortName:"Automaat Pärnu Raeküla Olevi Meie", street:"Olevi 27", countryCode:"EE", latitude:"58.35396", longitude:"24.56894" }
+  ];
+
+  // Kui Maa-ameti geokodeerimise API ka CORS-i tõttu ei vasta, kasuta neid varukoordinaate,
+  // et otsingu- ja kaugusloogikat saaks siiski demost näha.
+  var GEOCODE_FALLBACK = [
+    { match:"narva mnt 5", lat:59.437957, lon:24.758514, label:"Narva mnt 5, Tallinn (näidiskoordinaat)" },
+    { match:"riia 2", lat:58.372, lon:26.722, label:"Riia 2, Tartu (näidiskoordinaat)" },
+    { match:"pärnu mnt 10", lat:58.3859, lon:24.4971, label:"Pärnu mnt 10, Pärnu (näidiskoordinaat)" }
+  ];
+
+  // ---------- map setup ----------
+  var map = L.map("map", { scrollWheelZoom: true }).setView([58.8, 25.3], 7);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
+
+  var markersLayer = L.layerGroup().addTo(map);
+
+  function pinIcon(kind, label){
+    return L.divIcon({
+      className: "",
+      html: '<div class="pin ' + kind + '"><span>' + label + "</span></div>",
+      iconSize: [26, 26],
+      iconAnchor: [13, 26],
+      popupAnchor: [0, -24]
+    });
+  }
+
+  // ---------- helpers ----------
+  function haversineKm(lat1, lon1, lat2, lon2){
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function fmtKm(km){
+    if (km < 1) return Math.round(km * 1000) + " m";
+    return km.toFixed(1).replace(".", ",") + " km";
+  }
+
+  function setChip(el, kind, text){
+    el.className = "chip " + kind;
+    el.innerHTML = '<span class="dot"></span>' + text;
+  }
+
+  // ---------- data loading (päris andmed läbi Cloudflare Worker proxy) ----------
+  function splitWorkerLockers(items){
+    var omniva = [], dpd = [];
+    for (var i = 0; i < items.length; i++){
+      var r = items[i];
+      var lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      if (r.source === "omniva"){
+        omniva.push({
+          source: "omniva",
+          name: r.name || "Omniva asukoht",
+          addr: [r.city, r.county].filter(Boolean).join(", "),
+          zip: r.zip || "",
+          lat: lat, lon: lon
+        });
+      } else if (r.source === "dpd"){
+        dpd.push({
+          source: "dpd",
+          name: r.name || "DPD asukoht",
+          addr: [r.street, r.city].filter(Boolean).join(", "),
+          zip: r.zip || "",
+          lat: lat, lon: lon
+        });
+      }
+    }
+    return { omniva: omniva, dpd: dpd };
+  }
+
+  function loadLockers(){
+    fetch(WORKER_URL)
+      .then(function(r){ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function(data){
+        var split = splitWorkerLockers(data.lockers || []);
+        var errors = data.errors || {};
+
+        if (split.omniva.length) {
+          state.omniva = split.omniva;
+          setChip(document.getElementById("chipOmniva"), "ok", "Omniva: <b>" + split.omniva.length + "</b> asukohta (reaalajas)");
+        } else {
+          useSampleOmniva(errors.omniva || "worker tagastas 0 kirjet");
+        }
+
+        if (split.dpd.length) {
+          state.dpd = split.dpd;
+          setChip(document.getElementById("chipDpd"), "ok", "DPD: <b>" + split.dpd.length + "</b> asukohta (reaalajas)");
+        } else {
+          useSampleDpd(errors.dpd || "worker tagastas 0 kirjet");
+        }
+      })
+      .catch(function(err){
+        useSampleOmniva(err.message);
+        useSampleDpd(err.message);
+      });
+  }
+
+  function useSampleOmniva(reason){
+    state.omniva = normalizeOmniva(OMNIVA_SAMPLE_DATA);
+    setChip(document.getElementById("chipOmniva"), "bad", "Omniva: näidisandmed (" + escapeHtml(reason) + ")");
+  }
+
+  function useSampleDpd(reason){
+    state.dpd = normalizeDpd(DPD_SAMPLE_DATA);
+    setChip(document.getElementById("chipDpd"), "bad", "DPD: näidisandmed (" + escapeHtml(reason) + ")");
+  }
+
+  function normalizeOmniva(raw){
+    var list = Array.isArray(raw) ? raw : (raw && raw.data) || [];
+    var out = [];
+    for (var i = 0; i < list.length; i++){
+      var r = list[i];
+      var lat = parseFloat(r.Y_COORDINATE || r.y_coordinate);
+      var lon = parseFloat(r.X_COORDINATE || r.x_coordinate);
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      out.push({
+        source: "omniva",
+        name: r.NAME || r.name || "Omniva asukoht",
+        addr: [r.A2_NAME, r.A1_NAME].filter(Boolean).join(", "),
+        zip: r.ZIP || r.zip || "",
+        lat: lat, lon: lon
+      });
+    }
+    return out;
+  }
+
+  function normalizeDpd(raw){
+    var list = Array.isArray(raw) ? raw : (raw && raw.data) || [];
+    var out = [];
+    for (var i = 0; i < list.length; i++){
+      var r = list[i];
+      if (r.countryCode && r.countryCode !== "EE") continue;
+      var lat = parseFloat(r.latitude);
+      var lon = parseFloat(r.longitude);
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      var streetBits = [r.street, r.houseNo].filter(Boolean).join(" ");
+      out.push({
+        source: "dpd",
+        name: r.companyShortName || r.companyName || "DPD asukoht",
+        addr: [streetBits, r.city].filter(Boolean).join(", "),
+        zip: r.zipCode || "",
+        lat: lat, lon: lon
+      });
+    }
+    return out;
+  }
+
+  // ---------- geocoding ----------
+  function findFallback(text){
+    var needle = text.toLowerCase();
+    for (var i = 0; i < GEOCODE_FALLBACK.length; i++){
+      if (needle.indexOf(GEOCODE_FALLBACK[i].match) !== -1) return GEOCODE_FALLBACK[i];
+    }
+    return null;
+  }
+
+  function geocode(text){
+    var url = WORKER_GEOCODE_URL + "?text=" + encodeURIComponent(text);
+    return fetch(url).then(function(r){
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function(payload){
+      if (payload.error) throw new Error(payload.error);
+      var data = payload.result;
+      var hit = Array.isArray(data) ? data[0] : (data && data.addresses ? data.addresses[0] : data);
+      if (!hit || typeof hit.b === "undefined" || typeof hit.l === "undefined") {
+        throw new Error("Aadressi ei leitud");
+      }
+      return { lat: parseFloat(hit.l), lon: parseFloat(hit.b), label: hit.normaddress || text };
+    }).catch(function(err){
+      var fb = findFallback(text);
+      if (fb) return { lat: fb.lat, lon: fb.lon, label: fb.label };
+      throw err;
+    });
+  }
+
+  // ---------- automaadi nime järgi otsimine ----------
+  function allLockers(){
+    return [].concat(state.omniva || [], state.dpd || []);
+  }
+
+  function findLockerMatches(text){
+    var needle = text.trim().toLowerCase();
+    if (needle.length < 2) return [];
+    var words = needle.split(/\s+/);
+    return allLockers().filter(function(item){
+      var hay = (item.name + " " + (item.addr || "")).toLowerCase();
+      return words.every(function(w){ return hay.indexOf(w) !== -1; });
+    }).slice(0, 8);
+  }
+
+  function hideMatchPicker(){
+    var picker = document.getElementById("matchPicker");
+    picker.hidden = true;
+    picker.innerHTML = "";
+  }
+
+  function showMatchPicker(matches, originalText){
+    var picker = document.getElementById("matchPicker");
+    picker.innerHTML = "";
+    picker.hidden = false;
+
+    var label = document.createElement("div");
+    label.className = "picker-label";
+    label.textContent = "Leidsin " + matches.length + " automaati nimega “" + originalText + "” — vali õige:";
+    picker.appendChild(label);
+
+    matches.forEach(function(m){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.innerHTML =
+        '<span class="m-name"><span class="badge ' + m.source + '">' + m.source + "</span>" + escapeHtml(m.name) + "</span>" +
+        '<span class="m-addr">' + escapeHtml(m.addr || "") + "</span>";
+      btn.addEventListener("click", function(){
+        hideMatchPicker();
+        useLockerAsOrigin(m);
+      });
+      picker.appendChild(btn);
+    });
+  }
+
+  function useLockerAsOrigin(m){
+    var hint = document.getElementById("searchHint");
+    var pt = { lat: m.lat, lon: m.lon, label: m.name + (m.addr ? ", " + m.addr : "") };
+    state.userPoint = pt;
+    hint.className = "hint ok";
+    hint.textContent = "Lähtepunkt: " + pt.label;
+    renderResults(pt);
+  }
+
+  // ---------- search + render ----------
+  function runSearch(text){
+    var hint = document.getElementById("searchHint");
+    var btn = document.getElementById("searchBtn");
+    btn.disabled = true;
+    hideMatchPicker();
+
+    var nameMatches = findLockerMatches(text);
+    if (nameMatches.length === 1) {
+      hint.className = "hint";
+      hint.textContent = "Leitud automaat: " + nameMatches[0].name;
+      useLockerAsOrigin(nameMatches[0]);
+      btn.disabled = false;
+      return;
+    }
+    if (nameMatches.length > 1) {
+      hint.className = "hint";
+      hint.textContent = "Mitu automaati sobib — vali allolevast nimekirjast.";
+      showMatchPicker(nameMatches, text);
+      btn.disabled = false;
+      return;
+    }
+
+    hint.className = "hint";
+    hint.textContent = "Automaadi nime järgi vastet ei leitud, proovin aadressina…";
+
+    geocode(text).then(function(pt){
+      state.userPoint = pt;
+      hint.className = "hint ok";
+      hint.textContent = "Leitud: " + pt.label;
+      renderResults(pt);
+    }).catch(function(err){
+      hint.className = "hint error";
+      hint.textContent = "Ei leidnud sellenimelist automaati ega õnnestunud aadressina geokodeerida (" + err.message + ").";
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  }
+
+  function renderResults(pt){
+    var all = [].concat(state.omniva || [], state.dpd || []);
+    var withDist = all.map(function(p){
+      return Object.assign({}, p, { dist: haversineKm(pt.lat, pt.lon, p.lat, p.lon) });
+    });
+    withDist.sort(function(a,b){ return a.dist - b.dist; });
+    var top = withDist.slice(0, 10);
+
+    var resultsEl = document.getElementById("results");
+    resultsEl.innerHTML = "";
+
+    if (!all.length) {
+      resultsEl.innerHTML = '<div class="empty">Ühtegi allikat ei õnnestunud laadida, seega pole midagi võrrelda. Vaata ülalt, kumb API blokeeriti.</div>';
+    }
+
+    markersLayer.clearLayers();
+
+    var userMarker = L.marker([pt.lat, pt.lon], { icon: pinIcon("user", "★") })
+      .addTo(markersLayer)
+      .bindPopup('<div class="popup-title">Sinu asukoht</div><div class="popup-addr">' + pt.label + "</div>");
+
+    var bounds = [[pt.lat, pt.lon]];
+    var markerRefs = [];
+
+    top.forEach(function(item, idx){
+      var icon = pinIcon(item.source, String(idx + 1));
+      var m = L.marker([item.lat, item.lon], { icon: icon }).addTo(markersLayer);
+      m.bindPopup(
+        '<div class="popup-title">' + escapeHtml(item.name) + "</div>" +
+        '<div class="popup-addr">' + escapeHtml(item.addr || "") + "</div>" +
+        '<div class="popup-dist">' + fmtKm(item.dist) + " eemal &middot; " + item.source.toUpperCase() + "</div>"
+      );
+      bounds.push([item.lat, item.lon]);
+      markerRefs.push(m);
+
+      var row = document.createElement("div");
+      row.className = "result-item";
+      row.innerHTML =
+        '<div class="rank">' + (idx + 1) + "</div>" +
+        '<div class="result-body">' +
+          '<div class="result-top">' +
+            '<span class="badge ' + item.source + '">' + item.source + "</span>" +
+            '<span class="result-name">' + escapeHtml(item.name) + "</span>" +
+          "</div>" +
+          '<div class="result-addr">' + escapeHtml(item.addr || "") + (item.zip ? ", " + item.zip : "") + "</div>" +
+          '<div class="result-dist"><span class="mono">' + fmtKm(item.dist) + "</span> eemal</div>" +
+        "</div>";
+      row.addEventListener("click", function(){
+        document.querySelectorAll(".result-item").forEach(function(el){ el.classList.remove("active"); });
+        row.classList.add("active");
+        map.setView([item.lat, item.lon], 15);
+        m.openPopup();
+      });
+      resultsEl.appendChild(row);
+    });
+
+    if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+    } else {
+      map.setView([pt.lat, pt.lon], 13);
+    }
+    userMarker.openPopup();
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+
+  // ---------- wiring ----------
+  document.getElementById("searchForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var val = document.getElementById("addressInput").value.trim();
+    if (val) runSearch(val);
+  });
+  document.querySelectorAll(".example-row button[data-ex]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.getElementById("addressInput").value = btn.getAttribute("data-ex");
+      runSearch(btn.getAttribute("data-ex"));
+    });
+  });
+
+  loadLockers();
+})();
+</script>
