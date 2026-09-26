@@ -215,17 +215,12 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .carrier-filter button.active[data-source="omniva"]{background:var(--omniva)}
 .carrier-filter button.active[data-source="dpd"]{background:var(--dpd)}
 
-#exactMatches{
-  display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:9px;
-  padding:8px;background:var(--surface-2);
+.results-section + .results-section{border-top:1px solid var(--line)}
+.section-title{
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);padding:12px 16px 6px;
 }
-#exactMatches .picker-label{font-size:.76rem;color:var(--muted);padding:2px 4px 4px}
-#exactMatches .m-row{
-  display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;
-  border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 10px;
-}
-#exactMatches .m-name{font-size:.84rem;font-weight:600;display:flex;align-items:center;gap:6px}
-#exactMatches .m-addr{font-size:.76rem;color:var(--muted)}
+#exactSection .results{max-height:none}
 
 .layout{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;align-items:start}
 @media (max-width:780px){.layout{grid-template-columns:1fr}}
@@ -291,7 +286,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v2</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v3</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -312,7 +307,6 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="button" data-ex="Ülemiste keskus">Ülemiste keskus</button>
     </div>
     <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i.</div>
-    <div id="exactMatches" hidden></div>
     <div class="carrier-filter" id="carrierFilter">
       <span class="hint">Vedaja:</span>
       <button type="button" data-source="" class="active">Kõik</button>
@@ -323,8 +317,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   <div class="layout">
     <div class="panel">
-      <div class="results" id="results">
-        <div class="empty">Otsi aadress või automaadi nimi üleval, et näha lähimaid pakiautomaate.</div>
+      <div class="results-section" id="exactSection" hidden>
+        <div class="section-title">Selles asukohas</div>
+        <div class="results" id="exactResults"></div>
+      </div>
+      <div class="results-section">
+        <div class="section-title" id="nearbyTitle">Läheduses</div>
+        <div class="results" id="results">
+          <div class="empty">Otsi aadress või automaadi nimi üleval, et näha lähimaid pakiautomaate.</div>
+        </div>
       </div>
     </div>
     <div id="map"></div>
@@ -350,7 +351,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   var WORKER_URL = "https://epakiautomaadid.roolikatted.workers.dev/lockers";
   var WORKER_GEOCODE_URL = "https://epakiautomaadid.roolikatted.workers.dev/geocode";
 
-  var state = { omniva: null, dpd: null, omnivaErr: null, dpdErr: null, userPoint: null, carrierFilter: null };
+  var state = { omniva: null, dpd: null, omnivaErr: null, dpdErr: null, userPoint: null, carrierFilter: null, exactMatches: [] };
 
   // Väike käsitsi kogutud valim päris Omniva locations.json kirjetest (26.09.2026 seisuga).
   // Väli-nimed on jäetud samaks, mis päris API-l, et normaliseerimisfunktsioon jääks muutumatuks.
@@ -594,31 +595,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     }).slice(0, 8);
   }
 
-  function hideExactMatches(){
-    var el = document.getElementById("exactMatches");
-    el.hidden = true;
-    el.innerHTML = "";
+  function matchKey(item){
+    return item.source + "|" + item.lat + "|" + item.lon + "|" + item.name;
   }
 
-  // Näitab täpselt neid automaate, mis leiti otsitud nime järgi (nt "Põlva Selver"
-  // juures olevad Omniva + DPD punktid) — puhtalt infoks, mitte valikuks.
-  function showExactMatches(matches, originalText){
-    var el = document.getElementById("exactMatches");
-    el.innerHTML = "";
-    el.hidden = false;
-
-    var label = document.createElement("div");
-    label.className = "picker-label";
-    label.textContent = "“" + originalText + "” juures leitud automaadid (" + matches.length + "):";
-    el.appendChild(label);
-
-    matches.forEach(function(m){
-      var row = document.createElement("div");
-      row.className = "m-row";
-      row.innerHTML =
-        '<span class="m-name"><span class="badge ' + m.source + '">' + m.source + "</span>" + escapeHtml(m.name) + "</span>" +
-        '<span class="m-addr">' + escapeHtml(m.addr || "") + "</span>";
-      el.appendChild(row);
+  // Praeguse otsingu täpsed nimevasted (nt "Põlva Selver" juures olevad
+  // Omniva + DPD punktid), vedaja filtriga arvestatuna.
+  function currentExactMatches(){
+    return (state.exactMatches || []).filter(function(item){
+      return !state.carrierFilter || item.source === state.carrierFilter;
     });
   }
 
@@ -633,23 +618,21 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     var hint = document.getElementById("searchHint");
     var btn = document.getElementById("searchBtn");
     btn.disabled = true;
-    hideExactMatches();
 
     var nameMatches = findLockerMatches(text);
     if (nameMatches.length >= 1) {
       var best = nameMatches[0];
+      state.exactMatches = nameMatches;
       hint.className = "hint ok";
-      if (nameMatches.length === 1) {
-        hint.textContent = "Leitud automaat: " + best.name;
-      } else {
-        hint.textContent = "Leitud " + nameMatches.length + " automaati “" + text + "” juures.";
-        showExactMatches(nameMatches, text);
-      }
+      hint.textContent = nameMatches.length === 1
+        ? "Leitud automaat: " + best.name
+        : "Leitud " + nameMatches.length + " automaati “" + text + "” juures.";
       useLockerAsOrigin(best, text);
       btn.disabled = false;
       return;
     }
 
+    state.exactMatches = [];
     hint.className = "hint";
     hint.textContent = "Automaadi nime järgi vastet ei leitud, proovin aadressina…";
 
@@ -666,20 +649,45 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     });
   }
 
+  function buildRow(item, opts){
+    opts = opts || {};
+    var row = document.createElement("div");
+    row.className = "result-item";
+    row.innerHTML =
+      (opts.rank ? '<div class="rank">' + opts.rank + "</div>" : "") +
+      '<div class="result-body">' +
+        '<div class="result-top">' +
+          '<span class="badge ' + item.source + '">' + item.source + "</span>" +
+          '<span class="result-name">' + escapeHtml(item.name) + "</span>" +
+        "</div>" +
+        '<div class="result-addr">' + escapeHtml(item.addr || "") + (item.zip ? ", " + item.zip : "") + "</div>" +
+        (typeof item.dist === "number" ? '<div class="result-dist"><span class="mono">' + fmtKm(item.dist) + "</span> eemal</div>" : "") +
+      "</div>";
+    return row;
+  }
+
   function renderResults(pt){
+    var exactList = currentExactMatches();
+    var exactKeys = exactList.map(matchKey);
+
     var all = filteredLockers();
     var withDist = all.map(function(p){
       return Object.assign({}, p, { dist: haversineKm(pt.lat, pt.lon, p.lat, p.lon) });
     });
     withDist.sort(function(a,b){ return a.dist - b.dist; });
-    var top = withDist.slice(0, 10);
 
+    // Täpsed vasted näidatakse eraldi plokis, seega jäetakse need "läheduses" nimekirjast välja.
+    var nearby = withDist.filter(function(item){
+      return exactKeys.indexOf(matchKey(item)) === -1;
+    }).slice(0, 10);
+
+    var exactSection = document.getElementById("exactSection");
+    var exactEl = document.getElementById("exactResults");
     var resultsEl = document.getElementById("results");
+    var nearbyTitle = document.getElementById("nearbyTitle");
+    exactEl.innerHTML = "";
     resultsEl.innerHTML = "";
-
-    if (!all.length) {
-      resultsEl.innerHTML = '<div class="empty">Ühtegi allikat ei õnnestunud laadida, seega pole midagi võrrelda. Vaata ülalt, kumb API blokeeriti.</div>';
-    }
+    nearbyTitle.textContent = exactList.length ? "Läheduses" : "Lähimad automaadid";
 
     markersLayer.clearLayers();
 
@@ -688,9 +696,39 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       .bindPopup('<div class="popup-title">Sinu asukoht</div><div class="popup-addr">' + pt.label + "</div>");
 
     var bounds = [[pt.lat, pt.lon]];
-    var markerRefs = [];
 
-    top.forEach(function(item, idx){
+    if (exactList.length) {
+      exactSection.hidden = false;
+      document.querySelector("#exactSection .section-title").textContent = "Selles asukohas (" + exactList.length + ")";
+      exactList.forEach(function(item){
+        var dist = haversineKm(pt.lat, pt.lon, item.lat, item.lon);
+        var icon = pinIcon(item.source, "•");
+        var m = L.marker([item.lat, item.lon], { icon: icon }).addTo(markersLayer);
+        m.bindPopup(
+          '<div class="popup-title">' + escapeHtml(item.name) + "</div>" +
+          '<div class="popup-addr">' + escapeHtml(item.addr || "") + "</div>" +
+          '<div class="popup-dist">' + item.source.toUpperCase() + "</div>"
+        );
+        bounds.push([item.lat, item.lon]);
+
+        var row = buildRow(item, {});
+        row.addEventListener("click", function(){
+          map.setView([item.lat, item.lon], 16);
+          m.openPopup();
+        });
+        exactEl.appendChild(row);
+      });
+    } else {
+      exactSection.hidden = true;
+    }
+
+    if (!all.length) {
+      resultsEl.innerHTML = '<div class="empty">Ühtegi allikat ei õnnestunud laadida, seega pole midagi võrrelda. Vaata ülalt, kumb API blokeeriti.</div>';
+    } else if (!nearby.length) {
+      resultsEl.innerHTML = '<div class="empty">Teisi automaate läheduses ei leitud.</div>';
+    }
+
+    nearby.forEach(function(item, idx){
       var icon = pinIcon(item.source, String(idx + 1));
       var m = L.marker([item.lat, item.lon], { icon: icon }).addTo(markersLayer);
       m.bindPopup(
@@ -699,20 +737,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
         '<div class="popup-dist">' + fmtKm(item.dist) + " eemal &middot; " + item.source.toUpperCase() + "</div>"
       );
       bounds.push([item.lat, item.lon]);
-      markerRefs.push(m);
 
-      var row = document.createElement("div");
-      row.className = "result-item";
-      row.innerHTML =
-        '<div class="rank">' + (idx + 1) + "</div>" +
-        '<div class="result-body">' +
-          '<div class="result-top">' +
-            '<span class="badge ' + item.source + '">' + item.source + "</span>" +
-            '<span class="result-name">' + escapeHtml(item.name) + "</span>" +
-          "</div>" +
-          '<div class="result-addr">' + escapeHtml(item.addr || "") + (item.zip ? ", " + item.zip : "") + "</div>" +
-          '<div class="result-dist"><span class="mono">' + fmtKm(item.dist) + "</span> eemal</div>" +
-        "</div>";
+      var row = buildRow(item, { rank: idx + 1 });
       row.addEventListener("click", function(){
         document.querySelectorAll(".result-item").forEach(function(el){ el.classList.remove("active"); });
         row.classList.add("active");
