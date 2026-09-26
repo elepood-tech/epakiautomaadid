@@ -618,17 +618,13 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     hideMatchPicker();
 
     var nameMatches = findLockerMatches(text);
-    if (nameMatches.length === 1) {
+    if (nameMatches.length >= 1) {
+      var best = nameMatches[0];
       hint.className = "hint";
-      hint.textContent = "Leitud automaat: " + nameMatches[0].name;
-      useLockerAsOrigin(nameMatches[0]);
-      btn.disabled = false;
-      return;
-    }
-    if (nameMatches.length > 1) {
-      hint.className = "hint";
-      hint.textContent = "Mitu automaati sobib — vali allolevast nimekirjast.";
-      showMatchPicker(nameMatches, text);
+      hint.textContent = nameMatches.length === 1
+        ? "Leitud automaat: " + best.name
+        : "Leitud " + nameMatches.length + " automaati “" + text + "” juures — näitan lähimaid.";
+      useLockerAsOrigin(best);
       btn.disabled = false;
       return;
     }
