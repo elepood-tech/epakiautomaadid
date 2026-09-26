@@ -2,12 +2,12 @@
  * Pakiautomaatide proxy — Cloudflare Worker
  *
  * Miks see on vajalik:
- * Omniva ja DPD avaldavad oma pakiautomaatide asukohad avalike JSON-failidena,
- * aga nende serverid ei saada CORS-päiseid, mistõttu brauser blokeerib
- * otsepäringu sinu veebilehelt. See worker teeb päringu serveri poolelt
- * (kus CORS-i reeglid ei kehti), normaliseerib andmed ühte kujuni ja
- * puhverdab (cache) tulemuse 24 tunniks, nii et sa ei koorma Omniva/DPD
- * servereid iga külastaja peale.
+ * Omniva, DPD ja Smartpost avaldavad oma pakiautomaatide asukohad avalike
+ * JSON-failidena, aga nende serverid ei saada CORS-päiseid, mistõttu brauser
+ * blokeerib otsepäringu sinu veebilehelt. See worker teeb päringu serveri
+ * poolelt (kus CORS-i reeglid ei kehti), normaliseerib andmed ühte kujuni ja
+ * puhverdab (cache) tulemuse 24 tunniks, nii et allikate servereid ei
+ * koormata iga külastaja peale.
  *
  * v2 muudatused:
  *   - Fetch-päringutele lisatud brauseri-taolised päised (User-Agent, Accept),
@@ -15,16 +15,20 @@
  *     tavaline brauseripäis.
  *   - Vastuse külge lisatud "errors" väli, mis näitab otse JSON-is, kas mõni
  *     allikas nurjus ja miks — ei pea Cloudflare logisid vaatama.
+ * v3 muudatused:
+ *   - Lisatud Smartpost (my.smartpost.ee) kolmanda andmeallikana.
  *
  * Endpointid:
- *   GET /lockers             -> kõik asukohad (Omniva + DPD), normaliseeritud
+ *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost), normaliseeritud
  *   GET /lockers?source=omniva
  *   GET /lockers?source=dpd
+ *   GET /lockers?source=smartpost
  *   GET /geocode?text=...    -> aadressi geokodeerimine Maa-ameti API kaudu (samast põhjusest: CORS)
  */
 
 const OMNIVA_URL = "https://www.omniva.ee/locations.json";
 const DPD_URL = "https://dpdbaltics.com/PickupParcelShopData.json";
+const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
@@ -60,7 +64,7 @@ export default {
       });
     }
 
-    const source = url.searchParams.get("source"); // "omniva" | "dpd" | null (kõik)
+    const source = url.searchParams.get("source"); // "omniva" | "dpd" | "smartpost" | null (kõik)
     const cacheKey = new Request(url.toString(), request);
     const cache = caches.default;
 
@@ -69,28 +73,28 @@ export default {
       return cached;
     }
 
-    const [omnivaResult, dpdResult] = await Promise.all([
+    const [omnivaResult, dpdResult, smartpostResult] = await Promise.all([
       source && source !== "omniva" ? { data: [], error: null } : fetchOmniva(),
       source && source !== "dpd" ? { data: [], error: null } : fetchDpd(),
+      source && source !== "smartpost" ? { data: [], error: null } : fetchSmartpost(),
     ]);
 
     const body = JSON.stringify({
       updatedAt: new Date().toISOString(),
-      count: omnivaResult.data.length + dpdResult.data.length,
+      count: omnivaResult.data.length + dpdResult.data.length + smartpostResult.data.length,
       omnivaCount: omnivaResult.data.length,
       dpdCount: dpdResult.data.length,
+      smartpostCount: smartpostResult.data.length,
       errors: {
         omniva: omnivaResult.error,
         dpd: dpdResult.error,
+        smartpost: smartpostResult.error,
       },
-      debug: {
-        dpdRawCount: dpdResult.rawCount,
-      },
-      lockers: [...omnivaResult.data, ...dpdResult.data],
+      lockers: [...omnivaResult.data, ...dpdResult.data, ...smartpostResult.data],
     });
 
     // Kui midagi nurjus, ära puhverda seda tulemust pikalt — proovi varsti uuesti.
-    const anyError = omnivaResult.error || dpdResult.error;
+    const anyError = omnivaResult.error || dpdResult.error || smartpostResult.error;
     const maxAge = anyError ? 300 : CACHE_TTL_SECONDS;
 
     const response = new Response(body, {
@@ -174,9 +178,9 @@ async function fetchOmniva() {
         };
       })
       .filter(Boolean);
-    return { data: out, error: null, rawCount: null, rawSample: null };
+    return { data: out, error: null };
   } catch (err) {
-    return { data: [], error: String(err && err.message ? err.message : err), rawCount: null, rawSample: null };
+    return { data: [], error: String(err && err.message ? err.message : err) };
   }
 }
 
@@ -189,8 +193,6 @@ async function fetchDpd() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : data?.data || [];
-    const rawCount = list.length;
-    const rawSample = list.slice(0, 2);
     const out = list
       .filter((r) => !r.countryCode || r.countryCode === "EE")
       .map((r) => {
@@ -209,8 +211,41 @@ async function fetchDpd() {
         };
       })
       .filter(Boolean);
-    return { data: out, error: null, rawCount, rawSample };
+    return { data: out, error: null };
   } catch (err) {
-    return { data: [], error: String(err && err.message ? err.message : err), rawCount: null, rawSample: null };
+    return { data: [], error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function fetchSmartpost() {
+  try {
+    const res = await fetch(SMARTPOST_URL, {
+      headers: UPSTREAM_HEADERS,
+      cf: { cacheTtl: CACHE_TTL_SECONDS },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data?.data || data?.results || [];
+    const out = list
+      .filter((r) => !r.address_country_code || r.address_country_code.toLowerCase() === "ee")
+      .map((r) => {
+        const lat = parseFloat(r.address_latitude);
+        const lon = parseFloat(r.address_longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return {
+          source: "smartpost",
+          name: r.name ?? "Smartpost asukoht",
+          street: [r.address_street, r.address_house].filter(Boolean).join(" ") || null,
+          city: r.address_city ?? r.region ?? null,
+          county: null,
+          zip: r.address_zip ?? null,
+          lat,
+          lon,
+        };
+      })
+      .filter(Boolean);
+    return { data: out, error: null };
+  } catch (err) {
+    return { data: [], error: String(err && err.message ? err.message : err) };
   }
 }
