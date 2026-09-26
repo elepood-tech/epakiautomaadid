@@ -225,7 +225,7 @@ async function fetchSmartpost() {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    const list = Array.isArray(data) ? data : data?.data || data?.results || [];
+    const list = Array.isArray(data) ? data : data?.places || data?.data || data?.results || [];
     const out = list
       .filter((r) => !r.address_country_code || r.address_country_code.toLowerCase() === "ee")
       .map((r) => {
