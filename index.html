@@ -254,6 +254,7 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .badge.dpd{background:var(--dpd)}
 .badge.smartpost{background:var(--smartpost);color:#161200}
 .result-addr{font-size:.8rem;color:var(--muted)}
+.result-hours,.result-loc{font-size:.78rem;color:var(--muted)}
 .result-dist{font-size:.78rem;color:var(--ink);font-weight:600}
 .result-dist .mono{font-variant-numeric:tabular-nums}
 
@@ -292,7 +293,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v4</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v5</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -403,10 +404,10 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   // Väike käsitsi kogutud valim päris Smartpost my.smartpost.ee/api/places/ kirjetest (27.09.2026 seisuga).
   var SMARTPOST_SAMPLE_DATA = [
-    { name:"Tallinna Arsenali Keskus", address_street:"Erika 14", address_city:"Tallinn", address_country_code:"ee", address_latitude:59.45153, address_longitude:24.71749 },
-    { name:"Tallinna Ülemiste keskus", address_street:"Suur-Sõjamäe 4", address_city:"Tallinn", address_country_code:"ee", address_latitude:59.42289, address_longitude:24.7947 },
-    { name:"Tartu Eeden", address_street:"Turu 25", address_city:"Tartu", address_country_code:"ee", address_latitude:58.373434, address_longitude:26.748826 },
-    { name:"Pärnu Port Artur", address_street:"Riia mnt 128", address_city:"Pärnu", address_country_code:"ee", address_latitude:58.3859, address_longitude:24.4971 }
+    { name:"Tallinna Arsenali Keskus", address_street:"Erika 14", address_city:"Tallinn", address_country_code:"ee", availability_info:"E-P8:00-22:00", location_info:"Sissepääsu juures vasakul", address_latitude:59.45153, address_longitude:24.71749 },
+    { name:"Tallinna Ülemiste keskus", address_street:"Suur-Sõjamäe 4", address_city:"Tallinn", address_country_code:"ee", availability_info:"E-P9:00-21:00", location_info:"", address_latitude:59.42289, address_longitude:24.7947 },
+    { name:"Tartu Eeden", address_street:"Turu 25", address_city:"Tartu", address_country_code:"ee", availability_info:"E-P8:00-22:00", location_info:"", address_latitude:58.373434, address_longitude:26.748826 },
+    { name:"Pärnu Port Artur", address_street:"Riia mnt 128", address_city:"Pärnu", address_country_code:"ee", availability_info:"E-L9:00-21:00,P10:00-18:00", location_info:"", address_latitude:58.3859, address_longitude:24.4971 }
   ];
 
   // Kui Maa-ameti geokodeerimise API ka CORS-i tõttu ei vasta, kasuta neid varukoordinaate,
@@ -486,6 +487,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           name: r.name || "Smartpost asukoht",
           addr: [r.street, r.city].filter(Boolean).join(", "),
           zip: r.zip || "",
+          hours: r.hours || "",
+          locationInfo: r.locationInfo || "",
           lat: lat, lon: lon
         });
       }
@@ -597,6 +600,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
         name: r.name || "Smartpost asukoht",
         addr: [r.address_street, r.address_city].filter(Boolean).join(", "),
         zip: r.address_zip || "",
+        hours: r.availability_info || "",
+        locationInfo: r.location_info || "",
         lat: lat, lon: lon
       });
     }
@@ -707,6 +712,14 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     });
   }
 
+  function popupHtml(item, extraLine){
+    return '<div class="popup-title">' + escapeHtml(item.name) + "</div>" +
+      '<div class="popup-addr">' + escapeHtml(item.addr || "") + "</div>" +
+      (item.hours ? '<div class="popup-addr">&#9200; ' + escapeHtml(item.hours) + "</div>" : "") +
+      (item.locationInfo ? '<div class="popup-addr">&#128205; ' + escapeHtml(item.locationInfo) + "</div>" : "") +
+      '<div class="popup-dist">' + extraLine + "</div>";
+  }
+
   function buildRow(item, opts){
     opts = opts || {};
     var row = document.createElement("div");
@@ -719,6 +732,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           '<span class="result-name">' + escapeHtml(item.name) + "</span>" +
         "</div>" +
         '<div class="result-addr">' + escapeHtml(item.addr || "") + (item.zip ? ", " + item.zip : "") + "</div>" +
+        (item.hours ? '<div class="result-hours">&#9200; ' + escapeHtml(item.hours) + "</div>" : "") +
+        (item.locationInfo ? '<div class="result-loc">&#128205; ' + escapeHtml(item.locationInfo) + "</div>" : "") +
         (typeof item.dist === "number" ? '<div class="result-dist"><span class="mono">' + fmtKm(item.dist) + "</span> eemal</div>" : "") +
       "</div>";
     return row;
@@ -762,11 +777,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
         var dist = haversineKm(pt.lat, pt.lon, item.lat, item.lon);
         var icon = pinIcon(item.source, "•");
         var m = L.marker([item.lat, item.lon], { icon: icon }).addTo(markersLayer);
-        m.bindPopup(
-          '<div class="popup-title">' + escapeHtml(item.name) + "</div>" +
-          '<div class="popup-addr">' + escapeHtml(item.addr || "") + "</div>" +
-          '<div class="popup-dist">' + item.source.toUpperCase() + "</div>"
-        );
+        m.bindPopup(popupHtml(item, item.source.toUpperCase()));
         bounds.push([item.lat, item.lon]);
 
         var row = buildRow(item, {});
@@ -789,11 +800,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     nearby.forEach(function(item, idx){
       var icon = pinIcon(item.source, String(idx + 1));
       var m = L.marker([item.lat, item.lon], { icon: icon }).addTo(markersLayer);
-      m.bindPopup(
-        '<div class="popup-title">' + escapeHtml(item.name) + "</div>" +
-        '<div class="popup-addr">' + escapeHtml(item.addr || "") + "</div>" +
-        '<div class="popup-dist">' + fmtKm(item.dist) + " eemal &middot; " + item.source.toUpperCase() + "</div>"
-      );
+      m.bindPopup(popupHtml(item, fmtKm(item.dist) + " eemal &middot; " + item.source.toUpperCase()));
       bounds.push([item.lat, item.lon]);
 
       var row = buildRow(item, { rank: idx + 1 });

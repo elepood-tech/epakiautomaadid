@@ -35,7 +35,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -246,6 +246,8 @@ async function fetchSmartpost() {
           city: r.address_city ?? r.region ?? null,
           county: null,
           zip: r.address_zip ?? null,
+          hours: r.availability_info || null,
+          locationInfo: r.location_info || null,
           lat,
           lon,
         };
