@@ -204,18 +204,28 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 }
 .example-row button:hover{color:var(--ink);border-color:var(--muted)}
 
-#matchPicker{
+.carrier-filter{display:flex;flex-wrap:wrap;gap:6px}
+.carrier-filter button{
+  font-size:.76rem;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:600;
+}
+.carrier-filter button:hover{color:var(--ink);border-color:var(--muted)}
+.carrier-filter button.active{color:#fff;border-color:transparent}
+.carrier-filter button.active[data-source=""]{background:var(--ink)}
+.carrier-filter button.active[data-source="omniva"]{background:var(--omniva)}
+.carrier-filter button.active[data-source="dpd"]{background:var(--dpd)}
+
+#exactMatches{
   display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:9px;
   padding:8px;background:var(--surface-2);
 }
-#matchPicker .picker-label{font-size:.76rem;color:var(--muted);padding:2px 4px 4px}
-#matchPicker button{
+#exactMatches .picker-label{font-size:.76rem;color:var(--muted);padding:2px 4px 4px}
+#exactMatches .m-row{
   display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;
-  border:1px solid transparent;background:var(--surface);border-radius:7px;padding:7px 10px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 10px;
 }
-#matchPicker button:hover{border-color:var(--line);background:var(--surface-2)}
-#matchPicker button .m-name{font-size:.84rem;font-weight:600;display:flex;align-items:center;gap:6px}
-#matchPicker button .m-addr{font-size:.76rem;color:var(--muted)}
+#exactMatches .m-name{font-size:.84rem;font-weight:600;display:flex;align-items:center;gap:6px}
+#exactMatches .m-addr{font-size:.76rem;color:var(--muted)}
 
 .layout{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;align-items:start}
 @media (max-width:780px){.layout{grid-template-columns:1fr}}
@@ -281,7 +291,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v1</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v2</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -302,7 +312,13 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="button" data-ex="Ülemiste keskus">Ülemiste keskus</button>
     </div>
     <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i.</div>
-    <div id="matchPicker" hidden></div>
+    <div id="exactMatches" hidden></div>
+    <div class="carrier-filter" id="carrierFilter">
+      <span class="hint">Vedaja:</span>
+      <button type="button" data-source="" class="active">Kõik</button>
+      <button type="button" data-source="omniva">Omniva</button>
+      <button type="button" data-source="dpd">DPD</button>
+    </div>
   </div>
 
   <div class="layout">
@@ -334,7 +350,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   var WORKER_URL = "https://epakiautomaadid.roolikatted.workers.dev/lockers";
   var WORKER_GEOCODE_URL = "https://epakiautomaadid.roolikatted.workers.dev/geocode";
 
-  var state = { omniva: null, dpd: null, omnivaErr: null, dpdErr: null, userPoint: null };
+  var state = { omniva: null, dpd: null, omnivaErr: null, dpdErr: null, userPoint: null, carrierFilter: null };
 
   // Väike käsitsi kogutud valim päris Omniva locations.json kirjetest (26.09.2026 seisuga).
   // Väli-nimed on jäetud samaks, mis päris API-l, et normaliseerimisfunktsioon jääks muutumatuks.
@@ -562,52 +578,53 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     return [].concat(state.omniva || [], state.dpd || []);
   }
 
+  function filteredLockers(){
+    var all = allLockers();
+    if (!state.carrierFilter) return all;
+    return all.filter(function(item){ return item.source === state.carrierFilter; });
+  }
+
   function findLockerMatches(text){
     var needle = text.trim().toLowerCase();
     if (needle.length < 2) return [];
     var words = needle.split(/\s+/);
-    return allLockers().filter(function(item){
+    return filteredLockers().filter(function(item){
       var hay = (item.name + " " + (item.addr || "")).toLowerCase();
       return words.every(function(w){ return hay.indexOf(w) !== -1; });
     }).slice(0, 8);
   }
 
-  function hideMatchPicker(){
-    var picker = document.getElementById("matchPicker");
-    picker.hidden = true;
-    picker.innerHTML = "";
+  function hideExactMatches(){
+    var el = document.getElementById("exactMatches");
+    el.hidden = true;
+    el.innerHTML = "";
   }
 
-  function showMatchPicker(matches, originalText){
-    var picker = document.getElementById("matchPicker");
-    picker.innerHTML = "";
-    picker.hidden = false;
+  // Näitab täpselt neid automaate, mis leiti otsitud nime järgi (nt "Põlva Selver"
+  // juures olevad Omniva + DPD punktid) — puhtalt infoks, mitte valikuks.
+  function showExactMatches(matches, originalText){
+    var el = document.getElementById("exactMatches");
+    el.innerHTML = "";
+    el.hidden = false;
 
     var label = document.createElement("div");
     label.className = "picker-label";
-    label.textContent = "Leidsin " + matches.length + " automaati nimega “" + originalText + "” — vali õige:";
-    picker.appendChild(label);
+    label.textContent = "“" + originalText + "” juures leitud automaadid (" + matches.length + "):";
+    el.appendChild(label);
 
     matches.forEach(function(m){
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.innerHTML =
+      var row = document.createElement("div");
+      row.className = "m-row";
+      row.innerHTML =
         '<span class="m-name"><span class="badge ' + m.source + '">' + m.source + "</span>" + escapeHtml(m.name) + "</span>" +
         '<span class="m-addr">' + escapeHtml(m.addr || "") + "</span>";
-      btn.addEventListener("click", function(){
-        hideMatchPicker();
-        useLockerAsOrigin(m);
-      });
-      picker.appendChild(btn);
+      el.appendChild(row);
     });
   }
 
-  function useLockerAsOrigin(m){
-    var hint = document.getElementById("searchHint");
-    var pt = { lat: m.lat, lon: m.lon, label: m.name + (m.addr ? ", " + m.addr : "") };
+  function useLockerAsOrigin(m, label){
+    var pt = { lat: m.lat, lon: m.lon, label: label || (m.name + (m.addr ? ", " + m.addr : "")) };
     state.userPoint = pt;
-    hint.className = "hint ok";
-    hint.textContent = "Lähtepunkt: " + pt.label;
     renderResults(pt);
   }
 
@@ -616,16 +633,19 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     var hint = document.getElementById("searchHint");
     var btn = document.getElementById("searchBtn");
     btn.disabled = true;
-    hideMatchPicker();
+    hideExactMatches();
 
     var nameMatches = findLockerMatches(text);
     if (nameMatches.length >= 1) {
       var best = nameMatches[0];
-      hint.className = "hint";
-      hint.textContent = nameMatches.length === 1
-        ? "Leitud automaat: " + best.name
-        : "Leitud " + nameMatches.length + " automaati “" + text + "” juures — näitan lähimaid.";
-      useLockerAsOrigin(best);
+      hint.className = "hint ok";
+      if (nameMatches.length === 1) {
+        hint.textContent = "Leitud automaat: " + best.name;
+      } else {
+        hint.textContent = "Leitud " + nameMatches.length + " automaati “" + text + "” juures.";
+        showExactMatches(nameMatches, text);
+      }
+      useLockerAsOrigin(best, text);
       btn.disabled = false;
       return;
     }
@@ -647,7 +667,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   }
 
   function renderResults(pt){
-    var all = [].concat(state.omniva || [], state.dpd || []);
+    var all = filteredLockers();
     var withDist = all.map(function(p){
       return Object.assign({}, p, { dist: haversineKm(pt.lat, pt.lon, p.lat, p.lon) });
     });
@@ -726,6 +746,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     btn.addEventListener("click", function(){
       document.getElementById("addressInput").value = btn.getAttribute("data-ex");
       runSearch(btn.getAttribute("data-ex"));
+    });
+  });
+
+  document.querySelectorAll("#carrierFilter button[data-source]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll("#carrierFilter button[data-source]").forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      state.carrierFilter = btn.getAttribute("data-source") || null;
+      if (state.userPoint) renderResults(state.userPoint);
     });
   });
 
