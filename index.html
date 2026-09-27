@@ -208,6 +208,16 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .hint.error{color:var(--bad)}
 .hint.ok{color:var(--good)}
 
+.addr-dropdown{
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  background:var(--surface-2);
+}
+.addr-item{
+  padding:11px 13px;font-size:.85rem;cursor:pointer;border-bottom:1px solid var(--line);
+}
+.addr-item:last-child{border-bottom:none}
+.addr-item:hover,.addr-item:focus{background:var(--surface);outline:none}
+
 .example-row{display:flex;flex-wrap:wrap;gap:6px}
 .example-row button{
   font-size:.76rem;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
@@ -319,7 +329,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v18</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v19</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -336,6 +346,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <input type="text" id="addressInput" placeholder="Aadress või automaadi nimi, nt Põlva Selver" autocomplete="off" />
       <button type="submit" id="searchBtn">Otsi</button>
     </form>
+    <div class="addr-dropdown" id="addrDropdown" hidden></div>
     <div class="example-row">
       <span class="hint">Proovi:</span>
       <button type="button" data-ex="Narva mnt 5, Tallinn">Narva mnt 5, Tallinn</button>
@@ -737,7 +748,10 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     return null;
   }
 
-  function geocode(text){
+  // Tagastab KÕIK Maa-ameti kandidaataadressid (mitte ainult esimese), et
+  // mitmetähendusliku otsingu (nt "Narva mnt 5" ilma linnata) korral saaks
+  // kasutajale valiku pakkuda selle asemel, et suvaliselt üks neist valida.
+  function geocodeCandidates(text){
     var url = WORKER_GEOCODE_URL + "?text=" + encodeURIComponent(text);
     return fetch(url).then(function(r){
       if (!r.ok) throw new Error("HTTP " + r.status);
@@ -745,16 +759,50 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     }).then(function(payload){
       if (payload.error) throw new Error(payload.error);
       var data = payload.result;
-      var hit = Array.isArray(data) ? data[0] : (data && data.addresses ? data.addresses[0] : data);
-      if (!hit || typeof hit.b === "undefined" || typeof hit.l === "undefined") {
-        throw new Error("Aadressi ei leitud");
-      }
-      return { lat: parseFloat(hit.l), lon: parseFloat(hit.b), label: hit.normaddress || text };
+      var list = Array.isArray(data) ? data : (data && data.addresses ? data.addresses : (data ? [data] : []));
+      var out = list.map(function(hit){
+        if (!hit || typeof hit.b === "undefined" || typeof hit.l === "undefined") return null;
+        return { lat: parseFloat(hit.l), lon: parseFloat(hit.b), label: hit.normaddress || text };
+      }).filter(Boolean);
+      if (!out.length) throw new Error("Aadressi ei leitud");
+      return out;
     }).catch(function(err){
       var fb = findFallback(text);
-      if (fb) return { lat: fb.lat, lon: fb.lon, label: fb.label };
+      if (fb) return [{ lat: fb.lat, lon: fb.lon, label: fb.label }];
       throw err;
     });
+  }
+
+  function hideAddrDropdown(){
+    var dd = document.getElementById("addrDropdown");
+    dd.hidden = true;
+    dd.innerHTML = "";
+  }
+
+  function showAddrDropdown(candidates){
+    var dd = document.getElementById("addrDropdown");
+    dd.innerHTML = "";
+    candidates.slice(0, 8).forEach(function(c){
+      var item = document.createElement("div");
+      item.className = "addr-item";
+      item.tabIndex = 0;
+      item.textContent = c.label;
+      item.addEventListener("click", function(){ pickAddrCandidate(c); });
+      item.addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickAddrCandidate(c); }
+      });
+      dd.appendChild(item);
+    });
+    dd.hidden = false;
+  }
+
+  function pickAddrCandidate(c){
+    hideAddrDropdown();
+    state.userPoint = { lat: c.lat, lon: c.lon, label: c.label };
+    var hint = document.getElementById("searchHint");
+    hint.className = "hint ok";
+    hint.textContent = "Leitud: " + c.label;
+    renderResults(state.userPoint);
   }
 
   // ---------- automaadi nime järgi otsimine ----------
@@ -804,6 +852,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     var hint = document.getElementById("searchHint");
     var btn = document.getElementById("searchBtn");
     btn.disabled = true;
+    hideAddrDropdown();
 
     var nameMatches = findLockerMatches(text);
     if (nameMatches.length >= 1) {
@@ -841,7 +890,14 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     hint.className = "hint";
     hint.textContent = "Automaadi nime järgi vastet ei leitud, proovin aadressina…";
 
-    geocode(text).then(function(pt){
+    geocodeCandidates(text).then(function(candidates){
+      if (candidates.length > 1) {
+        hint.className = "hint";
+        hint.textContent = "Leiti " + candidates.length + " sarnast aadressi — vali õige allolevast loendist.";
+        showAddrDropdown(candidates);
+        return;
+      }
+      var pt = candidates[0];
       state.userPoint = pt;
       hint.className = "hint ok";
       hint.textContent = "Leitud: " + pt.label;
@@ -998,6 +1054,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   map.on("dblclick", function(e){
     document.getElementById("addressInput").value = "";
     state.exactMatches = [];
+    hideAddrDropdown();
     var pt = {
       lat: e.latlng.lat,
       lon: e.latlng.lng,
