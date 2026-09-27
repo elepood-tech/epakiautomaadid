@@ -88,7 +88,6 @@ export default {
 
     const body = JSON.stringify({
       updatedAt: new Date().toISOString(),
-      debugFirstSmartpostWithHours: smartpostResult.data.find((d) => d.hours) || null,
       count: omnivaResult.data.length + dpdResult.data.length + smartpostResult.data.length,
       omnivaCount: omnivaResult.data.length,
       dpdCount: dpdResult.data.length,
