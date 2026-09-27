@@ -101,6 +101,7 @@ svg.leaflet-zoom-animated{will-change:transform}
   --dpd:#dc0032;
   --smartpost:#f5a623;
   --venipak:#2fa84f;
+  --unisend:#7a4fd6;
   --shadow:0 1px 2px rgba(21,36,32,.06), 0 8px 24px rgba(21,36,32,.06);
   color-scheme:light;
 }
@@ -121,6 +122,7 @@ svg.leaflet-zoom-animated{will-change:transform}
     --dpd:#ff5f7e;
     --smartpost:#ffc247;
     --venipak:#5fd685;
+    --unisend:#b19bf0;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     color-scheme:dark;
   }
@@ -141,6 +143,7 @@ svg.leaflet-zoom-animated{will-change:transform}
   --dpd:#ff5f7e;
   --smartpost:#ffc247;
   --venipak:#5fd685;
+  --unisend:#b19bf0;
   --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
   color-scheme:dark;
 }
@@ -222,6 +225,7 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .carrier-filter button.active[data-source="dpd"]{background:var(--dpd)}
 .carrier-filter button.active[data-source="smartpost"]{background:var(--smartpost);color:#161200}
 .carrier-filter button.active[data-source="venipak"]{background:var(--venipak)}
+.carrier-filter button.active[data-source="unisend"]{background:var(--unisend)}
 
 .results-section + .results-section{border-top:1px solid var(--line)}
 .section-title{
@@ -258,6 +262,7 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .badge.dpd{background:var(--dpd)}
 .badge.smartpost{background:var(--smartpost);color:#161200}
 .badge.venipak{background:var(--venipak)}
+.badge.unisend{background:var(--unisend)}
 .result-addr{font-size:.8rem;color:var(--muted)}
 .result-hours,.result-loc{font-size:.78rem;color:var(--muted)}
 .result-dist{font-size:.78rem;color:var(--ink);font-weight:600}
@@ -285,6 +290,7 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .pin.dpd{background:var(--dpd)}
 .pin.smartpost{background:var(--smartpost);color:#161200}
 .pin.venipak{background:var(--venipak)}
+.pin.unisend{background:var(--unisend)}
 
 footer.note{font-size:.76rem;color:var(--muted);line-height:1.6;padding:2px 2px 4px}
 footer.note a{color:inherit}
@@ -299,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v6</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v7</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -308,6 +314,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <span class="chip loading" id="chipDpd"><span class="dot"></span>DPD andmed laadivad&hellip;</span>
     <span class="chip loading" id="chipSmartpost"><span class="dot"></span>Smartpost andmed laadivad&hellip;</span>
     <span class="chip loading" id="chipVenipak"><span class="dot"></span>Venipak andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipUnisend"><span class="dot"></span>Unisend andmed laadivad&hellip;</span>
   </div>
 
   <div class="panel searchbar">
@@ -329,6 +336,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="button" data-source="dpd">DPD</button>
       <button type="button" data-source="smartpost">Smartpost</button>
       <button type="button" data-source="venipak">Venipak</button>
+      <button type="button" data-source="unisend">Unisend</button>
     </div>
   </div>
 
@@ -354,6 +362,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <span class="src"><span class="sw" style="background:var(--dpd)"></span>DPD &mdash; dpdbaltics.com/PickupParcelShopData.json (läbi proxy)</span>
       <span class="src"><span class="sw" style="background:var(--smartpost)"></span>Smartpost &mdash; my.smartpost.ee/api/places/ (läbi proxy)</span>
       <span class="src"><span class="sw" style="background:var(--venipak)"></span>Venipak &mdash; go.venipak.lt/ws/get_pickup_points (läbi proxy)</span>
+      <span class="src"><span class="sw" style="background:var(--unisend)"></span>Unisend &mdash; api-esavitarna.post.lt/terminal/list/csv (läbi proxy)</span>
     </div>
     Andmed tõmmatakse iga kord vahepealse Cloudflare Worker'i kaudu, mis puhverdab tulemuse 24 tunniks &mdash;
     nii ei koormata Omniva ega DPD servereid iga külastaja peale. Kui mõni allikas ajutiselt ei vasta, langeb leht
@@ -370,7 +379,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   var WORKER_URL = "https://epakiautomaadid.roolikatted.workers.dev/lockers";
   var WORKER_GEOCODE_URL = "https://epakiautomaadid.roolikatted.workers.dev/geocode";
 
-  var state = { omniva: null, dpd: null, smartpost: null, venipak: null, userPoint: null, carrierFilter: null, exactMatches: [] };
+  var state = { omniva: null, dpd: null, smartpost: null, venipak: null, unisend: null, userPoint: null, carrierFilter: null, exactMatches: [] };
 
   // Väike käsitsi kogutud valim päris Omniva locations.json kirjetest (26.09.2026 seisuga).
   // Väli-nimed on jäetud samaks, mis päris API-l, et normaliseerimisfunktsioon jääks muutumatuks.
@@ -426,6 +435,13 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     { display_name:"Pärnu Port Artur 2", address:"Riia mnt 128a", city:"Pärnu", country:"EE", lat:"58.3843", lng:"24.4986", working_hours:"", description:"" }
   ];
 
+  // Väike käsitsi kogutud valim päris Unisend api-esavitarna.post.lt/terminal/list/csv kirjetest (27.09.2026 seisuga).
+  var UNISEND_SAMPLE_DATA = [
+    { name:"Pirita Selver", city:"Tallinn", address:"Rummu tee 4", postalCode:"11911", countryCode:"EE", latitude:"59.46235763", longitude:"24.82771488" },
+    { name:"Sõbra Selver", city:"Tartu", address:"Sõbra tn 41", postalCode:"50106", countryCode:"EE", latitude:"58.36408206", longitude:"26.74107996" },
+    { name:"Peetri Selver", city:"Peetri", address:"Veesaare tee 2", postalCode:"75312", countryCode:"EE", latitude:"59.402631293", longitude:"24.810446543" }
+  ];
+
   // Kui Maa-ameti geokodeerimise API ka CORS-i tõttu ei vasta, kasuta neid varukoordinaate,
   // et otsingu- ja kaugusloogikat saaks siiski demost näha.
   var GEOCODE_FALLBACK = [
@@ -476,7 +492,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   // ---------- data loading (päris andmed läbi Cloudflare Worker proxy) ----------
   function splitWorkerLockers(items){
-    var omniva = [], dpd = [], smartpost = [], venipak = [];
+    var omniva = [], dpd = [], smartpost = [], venipak = [], unisend = [];
     for (var i = 0; i < items.length; i++){
       var r = items[i];
       var lat = parseFloat(r.lat), lon = parseFloat(r.lon);
@@ -517,9 +533,19 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           locationInfo: r.locationInfo || "",
           lat: lat, lon: lon
         });
+      } else if (r.source === "unisend"){
+        unisend.push({
+          source: "unisend",
+          name: r.name || "Unisend asukoht",
+          addr: [r.street, r.city].filter(Boolean).join(", "),
+          zip: r.zip || "",
+          hours: r.hours || "",
+          locationInfo: r.locationInfo || "",
+          lat: lat, lon: lon
+        });
       }
     }
-    return { omniva: omniva, dpd: dpd, smartpost: smartpost, venipak: venipak };
+    return { omniva: omniva, dpd: dpd, smartpost: smartpost, venipak: venipak, unisend: unisend };
   }
 
   function loadLockers(){
@@ -556,12 +582,20 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
         } else {
           useSampleVenipak(errors.venipak || "worker tagastas 0 kirjet");
         }
+
+        if (split.unisend.length) {
+          state.unisend = split.unisend;
+          setChip(document.getElementById("chipUnisend"), "ok", "Unisend: <b>" + split.unisend.length + "</b> asukohta (reaalajas)");
+        } else {
+          useSampleUnisend(errors.unisend || "worker tagastas 0 kirjet");
+        }
       })
       .catch(function(err){
         useSampleOmniva(err.message);
         useSampleDpd(err.message);
         useSampleSmartpost(err.message);
         useSampleVenipak(err.message);
+        useSampleUnisend(err.message);
       });
   }
 
@@ -583,6 +617,11 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   function useSampleVenipak(reason){
     state.venipak = normalizeVenipak(VENIPAK_SAMPLE_DATA);
     setChip(document.getElementById("chipVenipak"), "bad", "Venipak: näidisandmed (" + escapeHtml(reason) + ")");
+  }
+
+  function useSampleUnisend(reason){
+    state.unisend = normalizeUnisend(UNISEND_SAMPLE_DATA);
+    setChip(document.getElementById("chipUnisend"), "bad", "Unisend: näidisandmed (" + escapeHtml(reason) + ")");
   }
 
   function normalizeOmniva(raw){
@@ -669,6 +708,28 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     return out;
   }
 
+  function normalizeUnisend(raw){
+    var list = Array.isArray(raw) ? raw : (raw && raw.data) || [];
+    var out = [];
+    for (var i = 0; i < list.length; i++){
+      var r = list[i];
+      if (r.countryCode && r.countryCode !== "EE") continue;
+      var lat = parseFloat(r.latitude);
+      var lon = parseFloat(r.longitude);
+      if (!isFinite(lat) || !isFinite(lon)) continue;
+      out.push({
+        source: "unisend",
+        name: r.name || "Unisend asukoht",
+        addr: [r.address, r.city].filter(Boolean).join(", "),
+        zip: r.postalCode || "",
+        hours: "",
+        locationInfo: r.comment || "",
+        lat: lat, lon: lon
+      });
+    }
+    return out;
+  }
+
   // ---------- geocoding ----------
   function findFallback(text){
     var needle = text.toLowerCase();
@@ -700,7 +761,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   // ---------- automaadi nime järgi otsimine ----------
   function allLockers(){
-    return [].concat(state.omniva || [], state.dpd || [], state.smartpost || [], state.venipak || []);
+    return [].concat(state.omniva || [], state.dpd || [], state.smartpost || [], state.venipak || [], state.unisend || []);
   }
 
   function filteredLockers(){

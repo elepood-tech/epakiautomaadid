@@ -19,13 +19,19 @@
  *   - Lisatud Smartpost (my.smartpost.ee) kolmanda andmeallikana.
  * v4 muudatused:
  *   - Lisatud Venipak (go.venipak.lt) neljanda andmeallikana.
+ * v5 muudatused:
+ *   - Lisatud Unisend/LP Express (api-esavitarna.post.lt) viienda andmeallikana.
+ *     Nende avalik API nõuab korrektset Origin-päist (muidu "Origin header is
+ *     missing" viga) — see on lihtsalt CORS-kontroll, mitte autentimine, ja
+ *     me võltsime seda samamoodi nagu DPD juures User-Agent'i.
  *
  * Endpointid:
- *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak), normaliseeritud
+ *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak + Unisend), normaliseeritud
  *   GET /lockers?source=omniva
  *   GET /lockers?source=dpd
  *   GET /lockers?source=smartpost
  *   GET /lockers?source=venipak
+ *   GET /lockers?source=unisend
  *   GET /geocode?text=...    -> aadressi geokodeerimine Maa-ameti API kaudu (samast põhjusest: CORS)
  */
 
@@ -40,7 +46,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -67,18 +73,6 @@ export default {
       return handleGeocode(url, ctx);
     }
 
-    // Ajutine debug-tee Unisendi CSV kuju uurimiseks — eemaldatakse pärast.
-    if (url.pathname === "/debug-unisend") {
-      const res = await fetch(UNISEND_URL, {
-        headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
-      });
-      const text = await res.text();
-      return new Response(text.slice(0, 3000), {
-        status: 200,
-        headers: { ...CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8" },
-      });
-    }
-
     if (url.pathname !== "/lockers") {
       return new Response(JSON.stringify({ error: "Tundmatu tee. Kasuta /lockers või /geocode" }), {
         status: 404,
@@ -97,31 +91,46 @@ export default {
       return cached;
     }
 
-    const [omnivaResult, dpdResult, smartpostResult, venipakResult] = await Promise.all([
+    const [omnivaResult, dpdResult, smartpostResult, venipakResult, unisendResult] = await Promise.all([
       source && source !== "omniva" ? { data: [], error: null } : fetchOmniva(),
       source && source !== "dpd" ? { data: [], error: null } : fetchDpd(),
       source && source !== "smartpost" ? { data: [], error: null } : fetchSmartpost(),
       source && source !== "venipak" ? { data: [], error: null } : fetchVenipak(),
+      source && source !== "unisend" ? { data: [], error: null } : fetchUnisend(),
     ]);
 
     const body = JSON.stringify({
       updatedAt: new Date().toISOString(),
-      count: omnivaResult.data.length + dpdResult.data.length + smartpostResult.data.length + venipakResult.data.length,
+      count:
+        omnivaResult.data.length +
+        dpdResult.data.length +
+        smartpostResult.data.length +
+        venipakResult.data.length +
+        unisendResult.data.length,
       omnivaCount: omnivaResult.data.length,
       dpdCount: dpdResult.data.length,
       smartpostCount: smartpostResult.data.length,
       venipakCount: venipakResult.data.length,
+      unisendCount: unisendResult.data.length,
       errors: {
         omniva: omnivaResult.error,
         dpd: dpdResult.error,
         smartpost: smartpostResult.error,
         venipak: venipakResult.error,
+        unisend: unisendResult.error,
       },
-      lockers: [...omnivaResult.data, ...dpdResult.data, ...smartpostResult.data, ...venipakResult.data],
+      lockers: [
+        ...omnivaResult.data,
+        ...dpdResult.data,
+        ...smartpostResult.data,
+        ...venipakResult.data,
+        ...unisendResult.data,
+      ],
     });
 
     // Kui midagi nurjus, ära puhverda seda tulemust pikalt — proovi varsti uuesti.
-    const anyError = omnivaResult.error || dpdResult.error || smartpostResult.error || venipakResult.error;
+    const anyError =
+      omnivaResult.error || dpdResult.error || smartpostResult.error || venipakResult.error || unisendResult.error;
     const maxAge = anyError ? 300 : CACHE_TTL_SECONDS;
 
     const response = new Response(body, {
@@ -295,6 +304,80 @@ async function fetchVenipak() {
           zip: r.zip || null,
           hours: formatVenipakHours(r.working_hours),
           locationInfo: r.description || null,
+          lat,
+          lon,
+        };
+      })
+      .filter(Boolean);
+    return { data: out, error: null };
+  } catch (err) {
+    return { data: [], error: String(err && err.message ? err.message : err) };
+  }
+}
+
+// Lihtne CSV parser, mis oskab jutumärkides välju (mis võivad sisaldada koma).
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      row.push(field); field = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); field = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const header = rows[0];
+  return rows.slice(1).map((r) => {
+    const obj = {};
+    header.forEach((h, idx) => { obj[h] = r[idx]; });
+    return obj;
+  });
+}
+
+async function fetchUnisend() {
+  try {
+    // Nende avalik terminalinimekiri nõuab korrektset Origin/Referer päist
+    // (sama tehnika, mis DPD User-Agent'i puhul — CORS-kontroll, mitte
+    // autentimine: ilma selleta annab "Origin header is missing" vea).
+    const res = await fetch(UNISEND_URL, {
+      headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
+      cf: { cacheTtl: CACHE_TTL_SECONDS },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCsv(text);
+    const out = rows
+      .filter((r) => !r.countryCode || r.countryCode === "EE")
+      .map((r) => {
+        const lat = parseFloat(r.latitude);
+        const lon = parseFloat(r.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return {
+          source: "unisend",
+          name: r.name || "Unisend asukoht",
+          street: r.address || null,
+          city: r.city || null,
+          county: null,
+          zip: r.postalCode || null,
+          hours: null,
+          locationInfo: r.comment || null,
           lat,
           lon,
         };
