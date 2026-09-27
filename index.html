@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v14</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v15</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -355,18 +355,6 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     </div>
     <div id="map"></div>
   </div>
-
-  <footer class="note">
-    <div style="margin-bottom:6px">
-      <span class="src"><span class="sw" style="background:var(--dpd)"></span>DPD &mdash; dpdbaltics.com/PickupParcelShopData.json (läbi proxy)</span>
-      <span class="src"><span class="sw" style="background:var(--smartpost)"></span>Smartpost &mdash; my.smartpost.ee/api/places/ (läbi proxy)</span>
-      <span class="src"><span class="sw" style="background:var(--venipak)"></span>Venipak &mdash; go.venipak.lt/ws/get_pickup_points (läbi proxy)</span>
-      <span class="src"><span class="sw" style="background:var(--unisend)"></span>Unisend &mdash; api-esavitarna.post.lt/terminal/list/csv (läbi proxy)</span>
-    </div>
-    Andmed tõmmatakse iga kord vahepealse Cloudflare Worker'i kaudu, mis puhverdab tulemuse 24 tunniks &mdash;
-    nii ei koormata Omniva ega DPD servereid iga külastaja peale. Kui mõni allikas ajutiselt ei vasta, langeb leht
-    tagasi väikese näidisvalimi peale (märgistatud punasega üleval). Kaardialus: OpenStreetMap.
-  </footer>
 
 </div>
 
