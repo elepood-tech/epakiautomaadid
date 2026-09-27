@@ -329,7 +329,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v20</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v21</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -818,13 +818,20 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   var CARRIER_LABELS = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak", unisend: "Unisend" };
 
+  // Otsime AINULT automaadi enda nime järgi (nt "Põlva Selver"), mitte enam
+  // ka aadressiteksti seest. Kui vaataksime ka item.addr, siis nt "Narva
+  // mnt 5" tabaks kohe ära suvalise automaadi, mille aadress juhtub seda
+  // teksti sisaldama (nt Tallinnas), ilma et kasutaja seda üldse otsis —
+  // ja varjaks täielikult meie Maa-ameti geokodeerimise (koos selle
+  // "vali õige linn" vihje/valikuga), kuna see kood ei jõuaks kunagi käivituda.
+  // Aadressiotsingud peavad alati minema geokodeerimise kaudu.
   function findLockerMatches(text, ignoreCarrierFilter){
     var needle = text.trim().toLowerCase();
     if (needle.length < 2) return [];
     var words = needle.split(/\s+/);
     var pool = ignoreCarrierFilter ? allLockers() : filteredLockers();
     return pool.filter(function(item){
-      var hay = (item.name + " " + (item.addr || "")).toLowerCase();
+      var hay = item.name.toLowerCase();
       return words.every(function(w){ return hay.indexOf(w) !== -1; });
     }).slice(0, 8);
   }
