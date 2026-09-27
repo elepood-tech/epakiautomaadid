@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lähim Pakiautomaat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -237,6 +239,18 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .layout{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;align-items:start}
 @media (max-width:780px){.layout{grid-template-columns:1fr}}
 
+/* Mobiilis suuremad puutepinnad ja natuke kompaktsem tekst, et leht oleks
+   ka väikesel ekraanil mugavalt kasutatav ilma suumimata. */
+@media (max-width:560px){
+  body{padding-inline:10px}
+  header.top h1{font-size:1.15rem}
+  .searchbar{padding:12px}
+  .searchbar button{padding:13px 16px;font-size:1rem}
+  .searchbar input[type=text]{padding:13px 13px;font-size:1rem}
+  .example-row button,.carrier-filter button{padding:9px 13px;font-size:.8rem}
+  .result-item{padding:14px 14px}
+}
+
 .results{display:flex;flex-direction:column;gap:0;max-height:640px;overflow-y:auto}
 .results .empty{padding:28px 18px;color:var(--muted);font-size:.88rem;text-align:center}
 .result-item{
@@ -305,7 +319,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v17</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v18</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -445,6 +459,17 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   }).addTo(map);
 
   var markersLayer = L.layerGroup().addTo(map);
+
+  // Kui akna suurus muutub (nt telefoni pöörad, või kaardi kõrgus muutub
+  // paigutuse murdepunktis), tuleb Leaflet'ile öelda, et ta oma mõõtmed
+  // üle kontrolliks, muidu jäävad kaardikillud valesse kohta.
+  var resizeTimer = null;
+  function scheduleMapResize(){
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){ map.invalidateSize(); }, 150);
+  }
+  window.addEventListener("resize", scheduleMapResize);
+  window.addEventListener("orientationchange", scheduleMapResize);
 
   function pinIcon(kind, label){
     return L.divIcon({
