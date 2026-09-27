@@ -64,7 +64,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v9";
+const CACHE_VERSION = "v10";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -165,13 +165,25 @@ export default {
     // Kui midagi nurjus, ära puhverda seda tulemust pikalt — proovi varsti uuesti.
     const anyError =
       omnivaResult.error || dpdResult.error || smartpostResult.error || venipakResult.error || unisendResult.error;
-    const maxAge = anyError ? 300 : CACHE_TTL_SECONDS;
+
+    // TÄHELEPANU: "Cache-Control" siin läheb otse KASUTAJA BRAUSERISSE, mitte
+    // ainult Cloudflare edge cache'ile. Kui see oleks 24h (nagu CACHE_TTL_SECONDS),
+    // jääks brauser vana /lockers vastust kasutama kuni 24h — sõltumata meie
+    // deploy'dest või CACHE_VERSION muutumisest. See oligi tegelik põhjus,
+    // miks Omniva postkontorite avatud aja parandus mõnes brauseris kohale
+    // ei jõudnud, kuigi worker ja index.html olid juba õigesti deploy'tud.
+    // Lahendus: brauserile lühike max-age (paar minutit), Cloudflare edge'i
+    // (kõigi külastajate vahel jagatud, päris 24h) jaoks eraldi
+    // "Cloudflare-CDN-Cache-Control" päis, mida brauserid ignoreerivad.
+    const browserMaxAge = anyError ? 30 : 120;
+    const edgeMaxAge = anyError ? 300 : CACHE_TTL_SECONDS;
 
     const response = new Response(body, {
       status: 200,
       headers: {
         ...CORS_HEADERS,
-        "Cache-Control": `public, max-age=${maxAge}`,
+        "Cache-Control": `public, max-age=${browserMaxAge}`,
+        "Cloudflare-CDN-Cache-Control": `public, max-age=${edgeMaxAge}`,
       },
     });
 
