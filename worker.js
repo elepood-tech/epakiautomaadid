@@ -47,6 +47,12 @@ const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
 const VENIPAK_URL = "https://go.venipak.lt/ws/get_pickup_points";
 const UNISEND_URL = "https://api-esavitarna.post.lt/terminal/list/csv";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
+// "/api/online" tagastab Maa-ameti enda "parima pakkumise" — ainult ühe
+// aadressi, isegi kui tekst (nt "Narva mnt 5" ilma linnata) sobib mitmele
+// kohale. "/api/plain" on sama avalik teenus, mida kasutab ka
+// inaadress.maaamet.ee enda otsingukast, ja tagastab KÕIK sobivad
+// kandidaadid (group.rows), nii et saame kasutajale valiku pakkuda.
+const MAAAMET_PLAIN_URL = "https://inaadress.maaamet.ee/geocoder-api/api/plain";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
@@ -216,15 +222,23 @@ async function handleGeocode(url, ctx) {
   if (cached) return cached;
 
   try {
-    const upstream = new URL(MAAAMET_GEOCODE_URL);
-    upstream.searchParams.set("text", text);
-    upstream.searchParams.set("output", "json");
+    let rows = await fetchPlainCandidates(text);
 
-    const res = await fetch(upstream.toString(), { headers: UPSTREAM_HEADERS });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    // "/api/plain" annab harva vahel tühja tulemuse (nt väga lühikese või
+    // ebatavalise sisendi korral) kuigi "/api/online" leiaks midagi — sel
+    // juhul langeme tagasi selle peale, et kasutaja saaks vähemalt ühe vaste.
+    if (!rows.length) {
+      const upstream = new URL(MAAAMET_GEOCODE_URL);
+      upstream.searchParams.set("text", text);
+      upstream.searchParams.set("output", "json");
+      const res = await fetch(upstream.toString(), { headers: UPSTREAM_HEADERS });
+      if (res.ok) {
+        const data = await res.json();
+        rows = data ? [data] : [];
+      }
+    }
 
-    const response = new Response(JSON.stringify({ error: null, result: data }), {
+    const response = new Response(JSON.stringify({ error: null, result: rows }), {
       status: 200,
       headers: {
         ...CORS_HEADERS,
@@ -239,6 +253,18 @@ async function handleGeocode(url, ctx) {
       { status: 200, headers: { ...CORS_HEADERS, "Cache-Control": "no-store" } }
     );
   }
+}
+
+async function fetchPlainCandidates(text) {
+  const res = await fetch(MAAAMET_PLAIN_URL, {
+    method: "POST",
+    headers: { ...UPSTREAM_HEADERS, "Content-Type": "application/json" },
+    body: JSON.stringify({ address: text }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const rows = data && data.group && Array.isArray(data.group.rows) ? data.group.rows : [];
+  return rows.filter((r) => r && typeof r.b !== "undefined" && typeof r.l !== "undefined");
 }
 
 async function fetchOmniva() {
