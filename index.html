@@ -97,11 +97,11 @@ svg.leaflet-zoom-animated{will-change:transform}
   --good:#1a8754;
   --warn:#b8860b;
   --bad:#c0392b;
-  --omniva:#005ea8;
+  --omniva:#ff7a1f;
   --dpd:#dc0032;
-  --smartpost:#f5a623;
-  --venipak:#2fa84f;
-  --unisend:#7a4fd6;
+  --smartpost:#1f6feb;
+  --venipak:#a76bea;
+  --unisend:#7ed957;
   --shadow:0 1px 2px rgba(21,36,32,.06), 0 8px 24px rgba(21,36,32,.06);
   color-scheme:light;
 }
@@ -118,11 +118,11 @@ svg.leaflet-zoom-animated{will-change:transform}
     --good:#3fbd7c;
     --warn:#e0b23e;
     --bad:#e2685c;
-    --omniva:#5aa4e8;
+    --omniva:#ffab6b;
     --dpd:#ff5f7e;
-    --smartpost:#ffc247;
-    --venipak:#5fd685;
-    --unisend:#b19bf0;
+    --smartpost:#6fa8ff;
+    --venipak:#c9a3f5;
+    --unisend:#a3e6a3;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     color-scheme:dark;
   }
@@ -139,11 +139,11 @@ svg.leaflet-zoom-animated{will-change:transform}
   --good:#3fbd7c;
   --warn:#e0b23e;
   --bad:#e2685c;
-  --omniva:#5aa4e8;
+  --omniva:#ffab6b;
   --dpd:#ff5f7e;
-  --smartpost:#ffc247;
-  --venipak:#5fd685;
-  --unisend:#b19bf0;
+  --smartpost:#6fa8ff;
+  --venipak:#c9a3f5;
+  --unisend:#a3e6a3;
   --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
   color-scheme:dark;
 }
@@ -223,9 +223,9 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .carrier-filter button.active[data-source=""]{background:var(--ink)}
 .carrier-filter button.active[data-source="omniva"]{background:var(--omniva)}
 .carrier-filter button.active[data-source="dpd"]{background:var(--dpd)}
-.carrier-filter button.active[data-source="smartpost"]{background:var(--smartpost);color:#161200}
+.carrier-filter button.active[data-source="smartpost"]{background:var(--smartpost)}
 .carrier-filter button.active[data-source="venipak"]{background:var(--venipak)}
-.carrier-filter button.active[data-source="unisend"]{background:var(--unisend)}
+.carrier-filter button.active[data-source="unisend"]{background:var(--unisend);color:#123319}
 
 .results-section + .results-section{border-top:1px solid var(--line)}
 .section-title{
@@ -260,9 +260,9 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 }
 .badge.omniva{background:var(--omniva)}
 .badge.dpd{background:var(--dpd)}
-.badge.smartpost{background:var(--smartpost);color:#161200}
+.badge.smartpost{background:var(--smartpost)}
 .badge.venipak{background:var(--venipak)}
-.badge.unisend{background:var(--unisend)}
+.badge.unisend{background:var(--unisend);color:#123319}
 .result-addr{font-size:.8rem;color:var(--muted)}
 .result-hours,.result-loc{font-size:.78rem;color:var(--muted)}
 .result-dist{font-size:.78rem;color:var(--ink);font-weight:600}
@@ -288,9 +288,9 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .pin.user{background:var(--ink)}
 .pin.omniva{background:var(--omniva)}
 .pin.dpd{background:var(--dpd)}
-.pin.smartpost{background:var(--smartpost);color:#161200}
+.pin.smartpost{background:var(--smartpost)}
 .pin.venipak{background:var(--venipak)}
-.pin.unisend{background:var(--unisend)}
+.pin.unisend{background:var(--unisend);color:#123319}
 
 footer.note{font-size:.76rem;color:var(--muted);line-height:1.6;padding:2px 2px 4px}
 footer.note a{color:inherit}
@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v9</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v10</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
