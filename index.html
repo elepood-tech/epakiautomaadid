@@ -331,7 +331,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v22</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v23</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -1111,6 +1111,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   // Tippimise ajal näidatav automaatide/asukohtade vihjeloend (autocomplete).
   var suggestTimer = null;
   var addressInputEl = document.getElementById("addressInput");
+  // Kui väljal on juba eelmise otsingu tekst, tühjendame selle kohe, kui
+  // kasutaja sinna uuesti klõpsab/tab'ib — nii ei pea vana teksti käsitsi
+  // ära kustutama, enne kui saab uue otsingu kirjutada.
+  addressInputEl.addEventListener("focus", function(){
+    if (addressInputEl.value) {
+      addressInputEl.value = "";
+      hideAddrDropdown();
+    }
+  });
   addressInputEl.addEventListener("input", function(){
     var text = addressInputEl.value;
     if (suggestTimer) clearTimeout(suggestTimer);

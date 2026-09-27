@@ -64,7 +64,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v8";
+const CACHE_VERSION = "v9";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -291,6 +291,13 @@ async function fetchOmniva() {
         const lat = parseFloat(r.Y_COORDINATE ?? r.y_coordinate);
         const lon = parseFloat(r.X_COORDINATE ?? r.x_coordinate);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        // Omniva andmestikus on TYPE "0" = pakiautomaat (õues, avatud aeg
+        // ebaoluline) ja TYPE "1" = postkontor (töötajatega, päris
+        // lahtiolekuaeg SERVICE_HOURS/TEMP_SERVICE_HOURS väljal). Näitame
+        // avatud aega ainult postkontoritel, mitte kunagi automaatidel.
+        const isPostOffice = r.TYPE === "1";
+        const rawHours = String(r.TEMP_SERVICE_HOURS || r.SERVICE_HOURS || "").trim();
+        const rawComment = String(r.comment_est || "").trim();
         return {
           source: "omniva",
           name: r.NAME ?? "Omniva asukoht",
@@ -298,6 +305,8 @@ async function fetchOmniva() {
           city: r.A2_NAME ?? null,
           county: r.A1_NAME ?? null,
           zip: r.ZIP ?? null,
+          hours: isPostOffice && rawHours ? rawHours : null,
+          locationInfo: isPostOffice && rawComment ? rawComment : null,
           lat,
           lon,
         };
