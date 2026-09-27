@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v11</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v12</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -328,7 +328,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="button" data-ex="Põlva Selver">Põlva Selver</button>
       <button type="button" data-ex="Ülemiste keskus">Ülemiste keskus</button>
     </div>
-    <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i.</div>
+    <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i. Võid ka lihtsalt kaardil klõpsata.</div>
     <div class="carrier-filter" id="carrierFilter">
       <span class="hint">Vedaja:</span>
       <button type="button" data-source="" class="active">Kõik</button>
@@ -955,6 +955,23 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       state.carrierFilter = btn.getAttribute("data-source") || null;
       if (state.userPoint) renderResults(state.userPoint);
     });
+  });
+
+  // Kaardil klõpsates kasutatakse klõpsatud kohta lähtepunktina — sama moodi
+  // nagu aadressi otsides, ainult ilma tippimata.
+  map.on("click", function(e){
+    document.getElementById("addressInput").value = "";
+    state.exactMatches = [];
+    var pt = {
+      lat: e.latlng.lat,
+      lon: e.latlng.lng,
+      label: "Valitud koht kaardil (" + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5) + ")"
+    };
+    state.userPoint = pt;
+    var hint = document.getElementById("searchHint");
+    hint.className = "hint ok";
+    hint.textContent = "Lähtepunkt: " + pt.label;
+    renderResults(pt);
   });
 
   loadLockers();
