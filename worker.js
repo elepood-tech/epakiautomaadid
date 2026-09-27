@@ -17,25 +17,29 @@
  *     allikas nurjus ja miks — ei pea Cloudflare logisid vaatama.
  * v3 muudatused:
  *   - Lisatud Smartpost (my.smartpost.ee) kolmanda andmeallikana.
+ * v4 muudatused:
+ *   - Lisatud Venipak (go.venipak.lt) neljanda andmeallikana.
  *
  * Endpointid:
- *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost), normaliseeritud
+ *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak), normaliseeritud
  *   GET /lockers?source=omniva
  *   GET /lockers?source=dpd
  *   GET /lockers?source=smartpost
+ *   GET /lockers?source=venipak
  *   GET /geocode?text=...    -> aadressi geokodeerimine Maa-ameti API kaudu (samast põhjusest: CORS)
  */
 
 const OMNIVA_URL = "https://www.omniva.ee/locations.json";
 const DPD_URL = "https://dpdbaltics.com/PickupParcelShopData.json";
 const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
+const VENIPAK_URL = "https://go.venipak.lt/ws/get_pickup_points";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v4";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -69,7 +73,7 @@ export default {
       });
     }
 
-    const source = url.searchParams.get("source"); // "omniva" | "dpd" | "smartpost" | null (kõik)
+    const source = url.searchParams.get("source"); // "omniva" | "dpd" | "smartpost" | "venipak" | null (kõik)
     const cacheUrl = new URL(url.toString());
     cacheUrl.searchParams.set("_cv", CACHE_VERSION);
     const cacheKey = new Request(cacheUrl.toString(), request);
@@ -80,28 +84,31 @@ export default {
       return cached;
     }
 
-    const [omnivaResult, dpdResult, smartpostResult] = await Promise.all([
+    const [omnivaResult, dpdResult, smartpostResult, venipakResult] = await Promise.all([
       source && source !== "omniva" ? { data: [], error: null } : fetchOmniva(),
       source && source !== "dpd" ? { data: [], error: null } : fetchDpd(),
       source && source !== "smartpost" ? { data: [], error: null } : fetchSmartpost(),
+      source && source !== "venipak" ? { data: [], error: null } : fetchVenipak(),
     ]);
 
     const body = JSON.stringify({
       updatedAt: new Date().toISOString(),
-      count: omnivaResult.data.length + dpdResult.data.length + smartpostResult.data.length,
+      count: omnivaResult.data.length + dpdResult.data.length + smartpostResult.data.length + venipakResult.data.length,
       omnivaCount: omnivaResult.data.length,
       dpdCount: dpdResult.data.length,
       smartpostCount: smartpostResult.data.length,
+      venipakCount: venipakResult.data.length,
       errors: {
         omniva: omnivaResult.error,
         dpd: dpdResult.error,
         smartpost: smartpostResult.error,
+        venipak: venipakResult.error,
       },
-      lockers: [...omnivaResult.data, ...dpdResult.data, ...smartpostResult.data],
+      lockers: [...omnivaResult.data, ...dpdResult.data, ...smartpostResult.data, ...venipakResult.data],
     });
 
     // Kui midagi nurjus, ära puhverda seda tulemust pikalt — proovi varsti uuesti.
-    const anyError = omnivaResult.error || dpdResult.error || smartpostResult.error;
+    const anyError = omnivaResult.error || dpdResult.error || smartpostResult.error || venipakResult.error;
     const maxAge = anyError ? 300 : CACHE_TTL_SECONDS;
 
     const response = new Response(body, {
@@ -213,6 +220,68 @@ async function fetchDpd() {
           city: r.city ?? null,
           county: null,
           zip: r.zipCode ?? null,
+          lat,
+          lon,
+        };
+      })
+      .filter(Boolean);
+    return { data: out, error: null };
+  } catch (err) {
+    return { data: [], error: String(err && err.message ? err.message : err) };
+  }
+}
+
+// Venipak "working_hours" on JSON-stringina kodeeritud massiiv päevade kaupa
+// (dayOfWeek 1=E...7=P, openTime/closeTime). Enamik automaate on avatud
+// ööpäevaringselt (00:00-23:59 kõik päevad) — sellisel juhul ei näita me
+// midagi, kuna kasutajale on see teave kasutu (vt. index.html samast otsusest
+// Omniva/DPD kohta). Näitame ainult siis, kui mõni päev on tegelikult piiratud.
+const WEEKDAY_LABELS = { 1: "E", 2: "T", 3: "K", 4: "N", 5: "R", 6: "L", 7: "P" };
+
+function formatVenipakHours(raw) {
+  if (!raw) return null;
+  let arr;
+  try {
+    arr = JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+  if (!Array.isArray(arr) || !arr.length) return null;
+
+  const isFullDay = (d) => d.openTime === "00:00" && d.closeTime === "23:59";
+  if (arr.every(isFullDay)) return null; // ööpäevaringne — pole vaja näidata
+
+  return arr
+    .slice()
+    .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+    .map((d) => (WEEKDAY_LABELS[d.dayOfWeek] || "?") + " " + d.openTime + "-" + d.closeTime)
+    .join(", ");
+}
+
+async function fetchVenipak() {
+  try {
+    const res = await fetch(VENIPAK_URL, {
+      headers: UPSTREAM_HEADERS,
+      cf: { cacheTtl: CACHE_TTL_SECONDS },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data?.data || [];
+    const out = list
+      .filter((r) => !r.country || r.country === "EE")
+      .map((r) => {
+        const lat = parseFloat(r.lat);
+        const lon = parseFloat(r.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return {
+          source: "venipak",
+          name: r.display_name || r.name || "Venipak asukoht",
+          street: r.address || null,
+          city: r.city || null,
+          county: null,
+          zip: r.zip || null,
+          hours: formatVenipakHours(r.working_hours),
+          locationInfo: r.description || null,
           lat,
           lon,
         };
