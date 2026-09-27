@@ -217,6 +217,8 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 }
 .addr-item:last-child{border-bottom:none}
 .addr-item:hover,.addr-item:focus{background:var(--surface);outline:none}
+.addr-item .badge{margin-right:6px}
+.addr-item .muted-inline{color:var(--muted);font-weight:400}
 
 .example-row{display:flex;flex-wrap:wrap;gap:6px}
 .example-row button{
@@ -329,7 +331,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v21</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v22</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -836,6 +838,65 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     }).slice(0, 8);
   }
 
+  // ---------- reaalajas vihjed (tippimise ajal) ----------
+  // Erinevalt findLockerMatches'ist (mida kasutab "Otsi" nupp/Enter ja mis
+  // otsib TÄPSUSE huvides ainult nime järgi), otsib see ka aadressi/linna
+  // seest — kuna kasutaja klõpsab siin nimekirjast TEADLIKULT ühe valiku,
+  // pole enam ohtu, et "Narva mnt 5"-taoline tekst kellegi eest ära arvatakse.
+  // Nii saab nt "põlv" kirjutades kohe näha kõiki Põlvas asuvaid automaate,
+  // isegi kui linnanimi pole automaadi enda nimeväljas.
+  function findLiveSuggestions(text){
+    var needle = text.trim().toLowerCase();
+    if (needle.length < 2) return [];
+    var words = needle.split(/\s+/);
+    var pool = filteredLockers();
+    var nameHits = [], addrHits = [];
+    pool.forEach(function(item){
+      var nameHay = item.name.toLowerCase();
+      if (words.every(function(w){ return nameHay.indexOf(w) !== -1; })) {
+        nameHits.push(item);
+        return;
+      }
+      var fullHay = nameHay + " " + (item.addr || "").toLowerCase();
+      if (words.every(function(w){ return fullHay.indexOf(w) !== -1; })) {
+        addrHits.push(item);
+      }
+    });
+    return nameHits.concat(addrHits).slice(0, 8);
+  }
+
+  function showLockerSuggestions(items){
+    var dd = document.getElementById("addrDropdown");
+    dd.innerHTML = "";
+    items.forEach(function(item){
+      var el = document.createElement("div");
+      el.className = "addr-item";
+      el.tabIndex = 0;
+      el.innerHTML = '<span class="badge ' + item.source + '">' + item.source + "</span> " +
+        "<strong>" + escapeHtml(item.name) + "</strong>" +
+        (item.addr ? ' <span class="muted-inline">— ' + escapeHtml(item.addr) + "</span>" : "");
+      // mousedown + preventDefault (mitte "click"): nii ei jõua sisendväli
+      // enne valikut fookust kaotada ja meie oma peida-dropdown blur-loogika
+      // ei jõua elementi enne klõpsu käsitlemist DOM-ist eemaldada.
+      el.addEventListener("mousedown", function(e){ e.preventDefault(); pickLockerSuggestion(item); });
+      el.addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickLockerSuggestion(item); }
+      });
+      dd.appendChild(el);
+    });
+    dd.hidden = false;
+  }
+
+  function pickLockerSuggestion(item){
+    hideAddrDropdown();
+    document.getElementById("addressInput").value = item.name;
+    state.exactMatches = [item];
+    var hint = document.getElementById("searchHint");
+    hint.className = "hint ok";
+    hint.textContent = "Valitud automaat: " + item.name;
+    useLockerAsOrigin(item, item.name);
+  }
+
   function matchKey(item){
     return item.source + "|" + item.lat + "|" + item.lon + "|" + item.name;
   }
@@ -1045,6 +1106,27 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     e.preventDefault();
     var val = document.getElementById("addressInput").value.trim();
     if (val) runSearch(val);
+  });
+
+  // Tippimise ajal näidatav automaatide/asukohtade vihjeloend (autocomplete).
+  var suggestTimer = null;
+  var addressInputEl = document.getElementById("addressInput");
+  addressInputEl.addEventListener("input", function(){
+    var text = addressInputEl.value;
+    if (suggestTimer) clearTimeout(suggestTimer);
+    if (text.trim().length < 2) { hideAddrDropdown(); return; }
+    suggestTimer = setTimeout(function(){
+      var hits = findLiveSuggestions(text);
+      if (hits.length) showLockerSuggestions(hits); else hideAddrDropdown();
+    }, 150);
+  });
+  addressInputEl.addEventListener("keydown", function(e){
+    if (e.key === "Escape") hideAddrDropdown();
+  });
+  addressInputEl.addEventListener("blur", function(){
+    // Väike viide, et mousedown-põhine valik (vt showLockerSuggestions)
+    // jõuaks kohale enne, kui dropdown peidetakse.
+    setTimeout(hideAddrDropdown, 150);
   });
   document.querySelectorAll(".example-row button[data-ex]").forEach(function(btn){
     btn.addEventListener("click", function(){
