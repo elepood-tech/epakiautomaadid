@@ -47,11 +47,17 @@ const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
 const VENIPAK_URL = "https://go.venipak.lt/ws/get_pickup_points";
 const UNISEND_URL = "https://api-esavitarna.post.lt/terminal/list/csv";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
-// "/api/online" tagastab Maa-ameti enda "parima pakkumise" — ainult ühe
-// aadressi, isegi kui tekst (nt "Narva mnt 5" ilma linnata) sobib mitmele
-// kohale. "/api/plain" on sama avalik teenus, mida kasutab ka
-// inaadress.maaamet.ee enda otsingukast, ja tagastab KÕIK sobivad
-// kandidaadid (group.rows), nii et saame kasutajale valiku pakkuda.
+// Katsetasime ka "/api/plain" (sama avalik teenus, mida kasutab
+// inaadress.maaamet.ee enda otsingukast) lootuses saada mitu kandidaati
+// tekstide jaoks nagu "Narva mnt 5" (ilma linnata). Kontrollitud: MÕLEMAD
+// otsad valivad ise ühe "parima" aadressi (nt alati Tallinna oma) ega
+// tagasta kunagi teiste linnade samanimelisi tänavaid — see on Maa-ameti
+// teenuse enda sisemine otsus, mitte midagi, mida meie saame mõjutada.
+// "/api/plain" tagastab endiselt struktuurse "group.rows" massiivi (harvadel
+// juhtudel, kui Maa-amet ISE peab tulemust mitmeseks, on seal >1 kirjet),
+// nii et jätsime selle esmaseks otsaks — kasutajaliideses näidatav
+// "Leitud: ..." tekst sisaldab alati valitud linna/valda, et kasutaja
+// näeks kohe, kas asukoht klapib, ja saaks vajadusel linnanimega täpsustada.
 const MAAAMET_PLAIN_URL = "https://inaadress.maaamet.ee/geocoder-api/api/plain";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
@@ -83,28 +89,6 @@ export default {
 
     if (url.pathname === "/geocode") {
       return handleGeocode(url, ctx);
-    }
-
-    // Ajutine silumistee, et näha, mida Maa-ameti "plain" otsing tegelikult
-    // tagastab (staatus, toores keha) — eemaldatakse pärast probleemi lahendamist.
-    if (url.pathname === "/debug-geocode-plain") {
-      const text = url.searchParams.get("text") || "Narva mnt 5";
-      try {
-        const res = await fetch(MAAAMET_PLAIN_URL, {
-          method: "POST",
-          headers: { ...UPSTREAM_HEADERS, "Content-Type": "application/json" },
-          body: JSON.stringify({ address: text }),
-        });
-        const bodyText = await res.text();
-        return new Response(
-          JSON.stringify({ status: res.status, ok: res.ok, bodyText: bodyText.slice(0, 3000) }, null, 2),
-          { headers: CORS_HEADERS }
-        );
-      } catch (err) {
-        return new Response(JSON.stringify({ error: String(err && err.message ? err.message : err) }), {
-          headers: CORS_HEADERS,
-        });
-      }
     }
 
     if (url.pathname !== "/lockers") {

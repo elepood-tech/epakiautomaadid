@@ -329,7 +329,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v19</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v20</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -900,7 +900,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       var pt = candidates[0];
       state.userPoint = pt;
       hint.className = "hint ok";
-      hint.textContent = "Leitud: " + pt.label;
+      // Maa-amet valib ise "parima" aadressi ega paku kunagi teiste
+      // linnade samanimelisi tänavaid valikuks (kontrollitud). Kui otsing
+      // ei sisaldanud koma (st tõenäoliselt polnud linna/valda kaasas),
+      // aga leitud aadress seda sisaldab, vihjame kasutajale, et vajadusel
+      // saab otsingut linnanimega täpsustada.
+      var extra = (text.indexOf(",") === -1 && pt.label.indexOf(",") !== -1)
+        ? " — kui see pole õige koht, täpsusta linna/valla nimega (nt “" + text + ", Tartu”)."
+        : "";
+      hint.textContent = "Leitud: " + pt.label + extra;
       renderResults(pt);
     }).catch(function(err){
       hint.className = "hint error";
