@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v12</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v13</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -328,7 +328,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="button" data-ex="Põlva Selver">Põlva Selver</button>
       <button type="button" data-ex="Ülemiste keskus">Ülemiste keskus</button>
     </div>
-    <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i. Võid ka lihtsalt kaardil klõpsata.</div>
+    <div class="hint" id="searchHint">Otsi kas aadressi (geokodeeritakse Maa-ameti API-ga) või mõne automaadi nime järgi &mdash; mõlemad käivad läbi sama proxy worker'i. Võid ka kaardil topeltklõpsata.</div>
     <div class="carrier-filter" id="carrierFilter">
       <span class="hint">Vedaja:</span>
       <button type="button" data-source="" class="active">Kõik</button>
@@ -451,7 +451,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   ];
 
   // ---------- map setup ----------
-  var map = L.map("map", { scrollWheelZoom: true }).setView([58.8, 25.3], 7);
+  var map = L.map("map", { scrollWheelZoom: true, doubleClickZoom: false }).setView([58.8, 25.3], 7);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution: "&copy; OpenStreetMap"
@@ -957,9 +957,11 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     });
   });
 
-  // Kaardil klõpsates kasutatakse klõpsatud kohta lähtepunktina — sama moodi
-  // nagu aadressi otsides, ainult ilma tippimata.
-  map.on("click", function(e){
+  // Kaardil topeltklõpsates kasutatakse klõpsatud kohta lähtepunktina — sama
+  // moodi nagu aadressi otsides, ainult ilma tippimata. Topeltklõps (mitte
+  // tavaline klõps), et see ei seguneks kaardil liikumisega ning kaardi
+  // tavapärane "topeltklõps suumib" käitumine on eespool välja lülitatud.
+  map.on("dblclick", function(e){
     document.getElementById("addressInput").value = "";
     state.exactMatches = [];
     var pt = {
