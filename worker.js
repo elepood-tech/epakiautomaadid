@@ -52,7 +52,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v6";
+const CACHE_VERSION = "v7";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -251,6 +251,10 @@ async function fetchOmniva() {
     const data = await res.json();
     const list = Array.isArray(data) ? data : data?.data || [];
     const out = list
+      // Omniva locations.json on ühine kõigile kolmele Balti riigile (A0_NAME
+      // on riigikood) — filtreerime Eestile, et olla järjekindel teiste nelja
+      // allikaga, mis kõik juba näitavad ainult Eestit.
+      .filter((r) => !r.A0_NAME || r.A0_NAME === "EE")
       .map((r) => {
         const lat = parseFloat(r.Y_COORDINATE ?? r.y_coordinate);
         const lon = parseFloat(r.X_COORDINATE ?? r.x_coordinate);
