@@ -52,7 +52,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v7";
+const CACHE_VERSION = "v8";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -433,8 +433,12 @@ async function fetchUnisend() {
           city: r.city || null,
           county: null,
           zip: r.postalCode || null,
+          // Unisendi kirjed on väliautomaadid (nagu teisedki peale Smartposti),
+          // seega avatud aeg pole oluline. "comment" väli on ka läbivalt
+          // samasugune leedukeelne üldtekst, mitte konkreetse asukoha
+          // kirjeldus, seega ei näita seda kasutajale.
           hours: null,
-          locationInfo: r.comment || null,
+          locationInfo: null,
           lat,
           lon,
         };
