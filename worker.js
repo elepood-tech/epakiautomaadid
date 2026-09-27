@@ -24,6 +24,12 @@
  *     Nende avalik API nõuab korrektset Origin-päist (muidu "Origin header is
  *     missing" viga) — see on lihtsalt CORS-kontroll, mitte autentimine, ja
  *     me võltsime seda samamoodi nagu DPD juures User-Agent'i.
+ * v6 muudatused:
+ *   - "Viimase teadaoleva hea seisu" säilitamine Cloudflare KV-s (LOCKER_CACHE
+ *     binding) allika kaupa. Kui mõni allikas ebaõnnestub (link muutus,
+ *     server ajutiselt maas), kasutame KV-s salvestatud viimaseid häid
+ *     andmeid selle asemel, et kukkuda tagasi väikesele sisseehitatud
+ *     näidiskomplektile — vt withLastKnownGood().
  *
  * Endpointid:
  *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak + Unisend), normaliseeritud
@@ -46,7 +52,7 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v5";
+const CACHE_VERSION = "v6";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
@@ -92,11 +98,17 @@ export default {
     }
 
     const [omnivaResult, dpdResult, smartpostResult, venipakResult, unisendResult] = await Promise.all([
-      source && source !== "omniva" ? { data: [], error: null } : fetchOmniva(),
-      source && source !== "dpd" ? { data: [], error: null } : fetchDpd(),
-      source && source !== "smartpost" ? { data: [], error: null } : fetchSmartpost(),
-      source && source !== "venipak" ? { data: [], error: null } : fetchVenipak(),
-      source && source !== "unisend" ? { data: [], error: null } : fetchUnisend(),
+      source && source !== "omniva" ? { data: [], error: null } : withLastKnownGood("omniva", fetchOmniva, env, ctx),
+      source && source !== "dpd" ? { data: [], error: null } : withLastKnownGood("dpd", fetchDpd, env, ctx),
+      source && source !== "smartpost"
+        ? { data: [], error: null }
+        : withLastKnownGood("smartpost", fetchSmartpost, env, ctx),
+      source && source !== "venipak"
+        ? { data: [], error: null }
+        : withLastKnownGood("venipak", fetchVenipak, env, ctx),
+      source && source !== "unisend"
+        ? { data: [], error: null }
+        : withLastKnownGood("unisend", fetchUnisend, env, ctx),
     ]);
 
     const body = JSON.stringify({
@@ -118,6 +130,16 @@ export default {
         smartpost: smartpostResult.error,
         venipak: venipakResult.error,
         unisend: unisendResult.error,
+      },
+      // true, kui see allikas hetkel tegelikult ebaõnnestus ja kuvatavad
+      // andmed pärinevad KV-sse salvestatud viimasest heast seisust, mitte
+      // värskest päringust.
+      stale: {
+        omniva: !!(omnivaResult.error && omnivaResult.recovered),
+        dpd: !!(dpdResult.error && dpdResult.recovered),
+        smartpost: !!(smartpostResult.error && smartpostResult.recovered),
+        venipak: !!(venipakResult.error && venipakResult.recovered),
+        unisend: !!(unisendResult.error && unisendResult.recovered),
       },
       lockers: [
         ...omnivaResult.data,
@@ -147,6 +169,37 @@ export default {
     return response;
   },
 };
+
+// Kutsub allika fetch-funktsiooni. Kui see õnnestub ja annab andmeid, salvestab
+// tulemuse Cloudflare KV-sse "viimase teadaoleva hea seisuna". Kui see
+// ebaõnnestub (viga või tühi tulemus), proovib KV-st lugeda eelmise õnnestunud
+// laadimise andmed ja kasutab neid selle asemel, et tagasi langeda väikesele
+// sisseehitatud näidiskomplektile.
+async function withLastKnownGood(sourceName, fetchFn, env, ctx) {
+  const result = await fetchFn();
+  const kv = env && env.LOCKER_CACHE;
+
+  if (!result.error && result.data.length) {
+    if (kv) {
+      const payload = JSON.stringify({ data: result.data, savedAt: new Date().toISOString() });
+      ctx.waitUntil(kv.put(`last:${sourceName}`, payload));
+    }
+    return result;
+  }
+
+  if (kv) {
+    try {
+      const stored = await kv.get(`last:${sourceName}`, "json");
+      if (stored && Array.isArray(stored.data) && stored.data.length) {
+        return { data: stored.data, error: result.error || "KV varukoopia", recovered: true, savedAt: stored.savedAt };
+      }
+    } catch (e) {
+      // KV lugemine ebaõnnestus — jätkame allolevat tavapärast tagasilangemist.
+    }
+  }
+
+  return result;
+}
 
 async function handleGeocode(url, ctx) {
   const text = url.searchParams.get("text");

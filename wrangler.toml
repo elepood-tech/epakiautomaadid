@@ -1,3 +1,11 @@
 name = "epakiautomaadid"
 main = "worker.js"
 compatibility_date = "2024-09-01"
+
+# "Viimase teadaoleva hea seisu" salvestamiseks allika kaupa — kui mõni
+# andmeallikas ajutiselt ebaõnnestub (link muutus, server maas), loeme
+# siit tema viimased head andmed selle asemel, et kukkuda tagasi väikesele
+# sisseehitatud näidiskomplektile.
+[[kv_namespaces]]
+binding = "LOCKER_CACHE"
+id = "7583958ca6144335b694b47f95e2d405"

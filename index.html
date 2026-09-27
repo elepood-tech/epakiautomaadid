@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v7</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v8</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -554,41 +554,27 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       .then(function(data){
         var split = splitWorkerLockers(data.lockers || []);
         var errors = data.errors || {};
+        var stale = data.stale || {};
 
-        if (split.omniva.length) {
-          state.omniva = split.omniva;
-          setChip(document.getElementById("chipOmniva"), "ok", "Omniva: <b>" + split.omniva.length + "</b> asukohta (reaalajas)");
-        } else {
-          useSampleOmniva(errors.omniva || "worker tagastas 0 kirjet");
+        function applySource(key, sampleFn, chipId, label){
+          var list = split[key];
+          if (list.length) {
+            state[key] = list;
+            if (stale[key]) {
+              setChip(document.getElementById(chipId), "bad", label + ": <b>" + list.length + "</b> asukohta (viimased teadaolevad, allikas hetkel ei vasta)");
+            } else {
+              setChip(document.getElementById(chipId), "ok", label + ": <b>" + list.length + "</b> asukohta (reaalajas)");
+            }
+          } else {
+            sampleFn(errors[key] || "worker tagastas 0 kirjet");
+          }
         }
 
-        if (split.dpd.length) {
-          state.dpd = split.dpd;
-          setChip(document.getElementById("chipDpd"), "ok", "DPD: <b>" + split.dpd.length + "</b> asukohta (reaalajas)");
-        } else {
-          useSampleDpd(errors.dpd || "worker tagastas 0 kirjet");
-        }
-
-        if (split.smartpost.length) {
-          state.smartpost = split.smartpost;
-          setChip(document.getElementById("chipSmartpost"), "ok", "Smartpost: <b>" + split.smartpost.length + "</b> asukohta (reaalajas)");
-        } else {
-          useSampleSmartpost(errors.smartpost || "worker tagastas 0 kirjet");
-        }
-
-        if (split.venipak.length) {
-          state.venipak = split.venipak;
-          setChip(document.getElementById("chipVenipak"), "ok", "Venipak: <b>" + split.venipak.length + "</b> asukohta (reaalajas)");
-        } else {
-          useSampleVenipak(errors.venipak || "worker tagastas 0 kirjet");
-        }
-
-        if (split.unisend.length) {
-          state.unisend = split.unisend;
-          setChip(document.getElementById("chipUnisend"), "ok", "Unisend: <b>" + split.unisend.length + "</b> asukohta (reaalajas)");
-        } else {
-          useSampleUnisend(errors.unisend || "worker tagastas 0 kirjet");
-        }
+        applySource("omniva", useSampleOmniva, "chipOmniva", "Omniva");
+        applySource("dpd", useSampleDpd, "chipDpd", "DPD");
+        applySource("smartpost", useSampleSmartpost, "chipSmartpost", "Smartpost");
+        applySource("venipak", useSampleVenipak, "chipVenipak", "Venipak");
+        applySource("unisend", useSampleUnisend, "chipUnisend", "Unisend");
       })
       .catch(function(err){
         useSampleOmniva(err.message);
