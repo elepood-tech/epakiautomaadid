@@ -305,7 +305,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v16</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v17</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -743,11 +743,14 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     return all.filter(function(item){ return item.source === state.carrierFilter; });
   }
 
-  function findLockerMatches(text){
+  var CARRIER_LABELS = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak", unisend: "Unisend" };
+
+  function findLockerMatches(text, ignoreCarrierFilter){
     var needle = text.trim().toLowerCase();
     if (needle.length < 2) return [];
     var words = needle.split(/\s+/);
-    return filteredLockers().filter(function(item){
+    var pool = ignoreCarrierFilter ? allLockers() : filteredLockers();
+    return pool.filter(function(item){
       var hay = (item.name + " " + (item.addr || "")).toLowerCase();
       return words.every(function(w){ return hay.indexOf(w) !== -1; });
     }).slice(0, 8);
@@ -788,6 +791,25 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       useLockerAsOrigin(best, text);
       btn.disabled = false;
       return;
+    }
+
+    // Kui valitud on vedaja filter ja nimeotsing filtreeritud hulgast
+    // vastet ei leidnud, kontrollime, kas mõni teine vedaja siiski sellise
+    // nimega automaadi juures asub — sel juhul pole tegu veaga, vaid lihtsalt
+    // filtriga peidetud tulemusega.
+    if (state.carrierFilter) {
+      var hiddenMatches = findLockerMatches(text, true);
+      if (hiddenMatches.length >= 1) {
+        var hidden = hiddenMatches[0];
+        state.exactMatches = [];
+        hint.className = "hint";
+        hint.textContent = "Valitud vedajal (" + (CARRIER_LABELS[state.carrierFilter] || state.carrierFilter) +
+          ") ei ole selles asukohas automaati. Vali vedajaks “Kõik”, et see näha saada — praegu näitan lähimaid " +
+          (CARRIER_LABELS[state.carrierFilter] || state.carrierFilter) + " automaate selle koha ümber.";
+        useLockerAsOrigin(hidden, text);
+        btn.disabled = false;
+        return;
+      }
     }
 
     state.exactMatches = [];
