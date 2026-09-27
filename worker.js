@@ -33,6 +33,7 @@ const OMNIVA_URL = "https://www.omniva.ee/locations.json";
 const DPD_URL = "https://dpdbaltics.com/PickupParcelShopData.json";
 const SMARTPOST_URL = "https://my.smartpost.ee/api/places/";
 const VENIPAK_URL = "https://go.venipak.lt/ws/get_pickup_points";
+const UNISEND_URL = "https://api-esavitarna.post.lt/terminal/list/csv";
 const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/online";
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
 
@@ -64,6 +65,18 @@ export default {
 
     if (url.pathname === "/geocode") {
       return handleGeocode(url, ctx);
+    }
+
+    // Ajutine debug-tee Unisendi CSV kuju uurimiseks — eemaldatakse pärast.
+    if (url.pathname === "/debug-unisend") {
+      const res = await fetch(UNISEND_URL, {
+        headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
+      });
+      const text = await res.text();
+      return new Response(text.slice(0, 3000), {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8" },
+      });
     }
 
     if (url.pathname !== "/lockers") {
