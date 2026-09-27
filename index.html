@@ -331,7 +331,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v23</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v24</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -528,6 +528,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           name: r.name || "Omniva asukoht",
           addr: [r.city, r.county].filter(Boolean).join(", "),
           zip: r.zip || "",
+          hours: r.hours || "",
+          locationInfo: r.locationInfo || "",
           lat: lat, lon: lon
         });
       } else if (r.source === "dpd"){
@@ -536,6 +538,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           name: r.name || "DPD asukoht",
           addr: [r.street, r.city].filter(Boolean).join(", "),
           zip: r.zip || "",
+          hours: r.hours || "",
+          locationInfo: r.locationInfo || "",
           lat: lat, lon: lon
         });
       } else if (r.source === "smartpost"){
