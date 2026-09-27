@@ -85,6 +85,28 @@ export default {
       return handleGeocode(url, ctx);
     }
 
+    // Ajutine silumistee, et näha, mida Maa-ameti "plain" otsing tegelikult
+    // tagastab (staatus, toores keha) — eemaldatakse pärast probleemi lahendamist.
+    if (url.pathname === "/debug-geocode-plain") {
+      const text = url.searchParams.get("text") || "Narva mnt 5";
+      try {
+        const res = await fetch(MAAAMET_PLAIN_URL, {
+          method: "POST",
+          headers: { ...UPSTREAM_HEADERS, "Content-Type": "application/json" },
+          body: JSON.stringify({ address: text }),
+        });
+        const bodyText = await res.text();
+        return new Response(
+          JSON.stringify({ status: res.status, ok: res.ok, bodyText: bodyText.slice(0, 3000) }, null, 2),
+          { headers: CORS_HEADERS }
+        );
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err && err.message ? err.message : err) }), {
+          headers: CORS_HEADERS,
+        });
+      }
+    }
+
     if (url.pathname !== "/lockers") {
       return new Response(JSON.stringify({ error: "Tundmatu tee. Kasuta /lockers või /geocode" }), {
         status: 404,
