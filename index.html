@@ -193,11 +193,19 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 
 .searchbar{display:flex;flex-direction:column;gap:10px;padding:16px}
 .searchbar form{display:flex;gap:8px;flex-wrap:wrap}
+.input-wrap{position:relative;flex:1 1 220px;min-width:0}
 .searchbar input[type=text]{
-  flex:1 1 220px;min-width:0;padding:11px 13px;border-radius:9px;border:1px solid var(--line);
+  width:100%;padding:11px 34px 11px 13px;border-radius:9px;border:1px solid var(--line);
   background:var(--surface-2);color:var(--ink);font-size:.95rem;
 }
 .searchbar input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px}
+.clear-btn{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border-radius:50%;border:none;background:transparent;
+  color:var(--muted);font-size:1.15rem;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;
+}
+.clear-btn:hover{background:var(--line);color:var(--ink)}
 .searchbar button{
   flex:none;padding:11px 18px;border-radius:9px;border:none;background:var(--accent);
   color:var(--accent-ink);font-weight:600;font-size:.92rem;cursor:pointer;
@@ -258,7 +266,8 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
   header.top h1{font-size:1.15rem}
   .searchbar{padding:12px}
   .searchbar button{padding:13px 16px;font-size:1rem}
-  .searchbar input[type=text]{padding:13px 13px;font-size:1rem}
+  .searchbar input[type=text]{padding:13px 36px 13px 13px;font-size:1rem}
+  .clear-btn{width:28px;height:28px;right:6px}
   .example-row button,.carrier-filter button{padding:9px 13px;font-size:.8rem}
   .result-item{padding:14px 14px}
 }
@@ -331,7 +340,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v24</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v25</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -345,7 +354,10 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 
   <div class="panel searchbar">
     <form id="searchForm">
-      <input type="text" id="addressInput" placeholder="Aadress või automaadi nimi, nt Põlva Selver" autocomplete="off" />
+      <div class="input-wrap">
+        <input type="text" id="addressInput" placeholder="Aadress või automaadi nimi, nt Põlva Selver" autocomplete="off" />
+        <button type="button" id="clearInputBtn" class="clear-btn" aria-label="Tühjenda otsinguväli" title="Tühjenda" hidden>&times;</button>
+      </div>
       <button type="submit" id="searchBtn">Otsi</button>
     </form>
     <div class="addr-dropdown" id="addrDropdown" hidden></div>
@@ -894,6 +906,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   function pickLockerSuggestion(item){
     hideAddrDropdown();
     document.getElementById("addressInput").value = item.name;
+    updateClearBtn();
     state.exactMatches = [item];
     var hint = document.getElementById("searchHint");
     hint.className = "hint ok";
@@ -1115,17 +1128,23 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   // Tippimise ajal näidatav automaatide/asukohtade vihjeloend (autocomplete).
   var suggestTimer = null;
   var addressInputEl = document.getElementById("addressInput");
-  // Kui väljal on juba eelmise otsingu tekst, tühjendame selle kohe, kui
-  // kasutaja sinna uuesti klõpsab/tab'ib — nii ei pea vana teksti käsitsi
-  // ära kustutama, enne kui saab uue otsingu kirjutada.
-  addressInputEl.addEventListener("focus", function(){
-    if (addressInputEl.value) {
-      addressInputEl.value = "";
-      hideAddrDropdown();
-    }
+  var clearInputBtn = document.getElementById("clearInputBtn");
+
+  // Otsinguväli EI tühjene enam iseenesest fookuse saamisel (see tegi
+  // olemasoleva otsingu täpsustamise ebamugavaks) — selle asemel on väljal
+  // endal selge "X" tühjendusnupp, mis ilmub ainult siis, kui väljal on teksti.
+  function updateClearBtn(){
+    clearInputBtn.hidden = !addressInputEl.value;
+  }
+  clearInputBtn.addEventListener("click", function(){
+    addressInputEl.value = "";
+    updateClearBtn();
+    hideAddrDropdown();
+    addressInputEl.focus();
   });
   addressInputEl.addEventListener("input", function(){
     var text = addressInputEl.value;
+    updateClearBtn();
     if (suggestTimer) clearTimeout(suggestTimer);
     if (text.trim().length < 2) { hideAddrDropdown(); return; }
     suggestTimer = setTimeout(function(){
@@ -1144,6 +1163,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   document.querySelectorAll(".example-row button[data-ex]").forEach(function(btn){
     btn.addEventListener("click", function(){
       document.getElementById("addressInput").value = btn.getAttribute("data-ex");
+      updateClearBtn();
       runSearch(btn.getAttribute("data-ex"));
     });
   });
@@ -1163,6 +1183,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   // tavapärane "topeltklõps suumib" käitumine on eespool välja lülitatud.
   map.on("dblclick", function(e){
     document.getElementById("addressInput").value = "";
+    updateClearBtn();
     state.exactMatches = [];
     hideAddrDropdown();
     var pt = {
