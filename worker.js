@@ -30,6 +30,14 @@
  *     server ajutiselt maas), kasutame KV-s salvestatud viimaseid häid
  *     andmeid selle asemel, et kukkuda tagasi väikesele sisseehitatud
  *     näidiskomplektile — vt withLastKnownGood().
+ * v7 muudatused:
+ *   - Bugifix: kui mõni allikas ei vastanud, ei puhverdatud /lockers vastust
+ *     ÜLDSE (`if (!anyError)` kaitses cache.put'i), mistõttu iga külastaja
+ *     päring käivitas päringu uuesti KÕIGI viie allika poole, mitte ainult
+ *     selle ühe katkise vastu — seni kuni allikas taastus. Nüüd puhverdatakse
+ *     ka veaga vastus, lihtsalt lühemaks ajaks (vt browserMaxAge/edgeMaxAge),
+ *     nii et katkise allika poole proovitakse uuesti kõige rohkem korra
+ *     iga paari minuti jooksul, mitte iga külastaja kohta eraldi.
  *
  * Endpointid:
  *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak + Unisend), normaliseeritud
@@ -193,9 +201,12 @@ export default {
       },
     });
 
-    if (!anyError) {
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
-    }
+    // Puhverdame ka vea korral (lühikeseks ajaks, vt browserMaxAge/edgeMaxAge
+    // ülal) — muidu läheks IGA külastaja päring otse kõigi viie allika
+    // poole uuesti, seni kuni üks neist ei vasta. Nii proovitakse uuesti
+    // kõige rohkem korra iga edgeMaxAge (vaikimisi 5 min) jooksul, mitte
+    // iga külastaja kohta eraldi.
+    ctx.waitUntil(cache.put(cacheKey, response.clone()));
     return response;
   },
 };
