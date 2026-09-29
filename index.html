@@ -173,7 +173,9 @@ body{
 
 .wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
 
-header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px}
+header.top{display:flex;flex-direction:column;gap:8px}
+header.top .top-title-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+header.top .top-meta-row{display:flex;flex-wrap:wrap;gap:8px}
 header.top h1{font-size:1.35rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
 header.top .tag{
   font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
@@ -365,11 +367,15 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 <div class="wrap">
 
   <header class="top">
-    <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
-    <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v34</span>
-    <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
-    <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
+    <div class="top-title-row">
+      <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
+      <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
+    </div>
+    <div class="top-meta-row">
+      <span class="tag">Reaalajas andmed</span>
+      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v35</span>
+      <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
+    </div>
   </header>
 
   <div class="panel searchbar">
@@ -424,7 +430,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <p>Pakk ei lähe alati sinu enda koju. Saad vaadata, millised pakiautomaadid on sugulase, töökoha või teise linna aadressi ümber, ja valida sellele paigale sobiva vedaja. Nii saab enne e-poes vedaja valimist kontrollida, kas saajale sobiv pakiautomaat on olemas.</p>
 
     <h2>Kuidas pakiautomaate otsida</h2>
-    <p>Sisesta otsingusse aadress, näiteks tänav ja linn, või pakiautomaadi nimi, näiteks kaupluse järgi. Teise võimalusena tee kaardil topeltklõps kohas, mille ümbrust soovid näha. Leht näitab valitud koha ümber kümmet lähimat pakiautomaati kaardil ja nimekirjas koos kaugusega. Kaugus on mõõdetud õhuliinis, seega tegelik tee võib olla pikem. Kui sisestatud aadress sobib mitme kohaga, saad nimekirjast õige valida.</p>
+    <p>Sisesta otsingusse aadress, näiteks tänav ja linn, või pakiautomaadi nimi, näiteks kaupluse järgi. Teise võimalusena tee kaardil topeltklõps kohas, mille ümbrust soovid näha. Leht näitab valitud koha ümber kümmet lähimat pakiautomaati kaardil ja nimekirjas koos kaugusega. Kaugus on mõõdetud linnulennult, seega tegelik tee võib olla pikem. Kui sisestatud aadress sobib mitme kohaga, saad nimekirjast õige valida.</p>
 
     <h2>Sama koha erinevad vedajad</h2>
     <p>Kui otsid pakiautomaati nime järgi, näiteks kaupluse ja linnaga, näitab leht eraldi ploki „Selles asukohas”, kus on selle nimega pakiautomaadid koos vedajaga. Nii on näha, milliste vedajate pakiautomaadid on samas kohas olemas.</p>
@@ -658,9 +664,9 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
           if (list.length) {
             state[key] = list;
             if (stale[key]) {
-              setChip(document.getElementById(chipId), "bad", label + ": <b>" + list.length + "</b> asukohta (viimased teadaolevad, allikas hetkel ei vasta)");
+              setChip(document.getElementById(chipId), "bad", label + " pakiautomaadid: <b>" + list.length + "</b> (viimased teadaolevad, allikas hetkel ei vasta)");
             } else {
-              setChip(document.getElementById(chipId), "ok", label + ": <b>" + list.length + "</b> asukohta (reaalajas)");
+              setChip(document.getElementById(chipId), "ok", label + " pakiautomaadid: <b>" + list.length + "</b>");
             }
           } else {
             sampleFn(errors[key] || "worker tagastas 0 kirjet");
