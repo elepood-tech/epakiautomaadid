@@ -257,7 +257,13 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 #exactSection .results{max-height:none}
 
 .layout{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:14px;align-items:start}
-@media (max-width:780px){.layout{grid-template-columns:1fr}}
+@media (max-width:780px){
+  .layout{grid-template-columns:1fr}
+  /* Mobiilis on kaart enne ja tulemuste nimekiri selle all — nii näeb
+     kohe asukohti kaardil, ilma et peaks enne nimekirjast mööda kerima. */
+  .layout #map{order:1}
+  .layout > .panel{order:2}
+}
 
 /* Mobiilis suuremad puutepinnad ja natuke kompaktsem tekst, et leht oleks
    ka väikesel ekraanil mugavalt kasutatav ilma suumimata. */
@@ -340,7 +346,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v25</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v26</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
