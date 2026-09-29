@@ -1,6 +1,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lähim Pakiautomaat</title>
+<title>Lähim pakiautomaat – pakiautomaatide kaart Eestis</title>
+<meta name="description" content="Pakiautomaatide kaart Eestis: otsi aadressi või nime järgi ja vaata Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaate valitud koha ümber.">
+
 <script>
 // Rakenda salvestatud teemaeelistus enne CSS-i renderdamist, et vältida valge/tumeda vilkumist.
 (function(){
@@ -345,6 +347,13 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .pin.venipak{background:var(--venipak)}
 .pin.unisend{background:var(--unisend);color:#123319}
 
+.content-section{margin-top:4px;color:var(--muted);font-size:.88rem;line-height:1.65}
+.content-section h2{font-size:1rem;color:var(--ink);margin:22px 0 6px}
+.content-section h2:first-of-type{margin-top:0}
+.content-section h3{font-size:.92rem;color:var(--ink);margin:14px 0 4px}
+.content-section p{max-width:72ch;margin:0 0 4px}
+.content-section .faq p{margin-bottom:2px}
+
 footer.note{font-size:.76rem;color:var(--muted);line-height:1.6;padding:2px 2px 4px}
 footer.note a{color:inherit}
 footer.note .src{
@@ -356,11 +365,11 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 <div class="wrap">
 
   <header class="top">
-    <h1>Lähim pakiautomaat</h1>
+    <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v33</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v34</span>
     <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
-    <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
+    <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
   </header>
 
   <div class="panel searchbar">
@@ -372,7 +381,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <button type="submit" id="searchBtn">Otsi</button>
     </form>
     <div class="addr-dropdown" id="addrDropdown" hidden></div>
-    <div class="hint" id="searchHint"></div>
+    <div class="hint" id="searchHint">Vihje: kaardil topeltklõpsates saad lähtepunkti ise valida.</div>
     <div class="carrier-filter" id="carrierFilter">
       <button type="button" data-source="" class="active">Kõik</button>
       <button type="button" data-source="omniva">Omniva</button>
@@ -406,6 +415,41 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <span class="chip loading" id="chipVenipak"><span class="dot"></span>Venipak andmed laadivad&hellip;</span>
     <span class="chip loading" id="chipUnisend"><span class="dot"></span>Unisend andmed laadivad&hellip;</span>
   </div>
+
+  <section class="content-section" aria-label="Rohkem infot pakiautomaatide kaardi kohta">
+    <h2>Pakiautomaatide kaart Eestis ühel lehel</h2>
+    <p>Iga vedaja hoiab oma pakiautomaatide asukohti eraldi. See leht toob Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid kokku ühele kaardile, et sa ei peaks iga vedaja kodulehte eraldi avama. Pakiautomaatide kaart katab Eestit Tallinnast ja Tartust väikeasulateni ning sobib nii enda ümbruse kui ka teise linna või piirkonna pakiautomaatide vaatamiseks.</p>
+
+    <h2>Vaata pakiautomaate mis tahes sihtkohas</h2>
+    <p>Pakk ei lähe alati sinu enda koju. Saad vaadata, millised pakiautomaadid on sugulase, töökoha või teise linna aadressi ümber, ja valida sellele paigale sobiva vedaja. Nii saab enne e-poes vedaja valimist kontrollida, kas saajale sobiv pakiautomaat on olemas.</p>
+
+    <h2>Kuidas pakiautomaate otsida</h2>
+    <p>Sisesta otsingusse aadress, näiteks tänav ja linn, või pakiautomaadi nimi, näiteks kaupluse järgi. Teise võimalusena tee kaardil topeltklõps kohas, mille ümbrust soovid näha. Leht näitab valitud koha ümber kümmet lähimat pakiautomaati kaardil ja nimekirjas koos kaugusega. Kaugus on mõõdetud õhuliinis, seega tegelik tee võib olla pikem. Kui sisestatud aadress sobib mitme kohaga, saad nimekirjast õige valida.</p>
+
+    <h2>Sama koha erinevad vedajad</h2>
+    <p>Kui otsid pakiautomaati nime järgi, näiteks kaupluse ja linnaga, näitab leht eraldi ploki „Selles asukohas”, kus on selle nimega pakiautomaadid koos vedajaga. Nii on näha, milliste vedajate pakiautomaadid on samas kohas olemas.</p>
+
+    <h2>Pakiautomaadid vedaja järgi</h2>
+    <p>Vaikimisi näed kõigi vedajate pakiautomaate korraga. Kui sa tead, millist vedajat pakk vajab, vali ülevalt filtrist Omniva, DPD, Smartpost, Venipak või Unisend ning kaardil ja nimekirjas jäävad alles ainult selle vedaja pakiautomaadid.</p>
+
+    <h2>Korduma kippuvad küsimused</h2>
+    <div class="faq">
+      <h3>Kust pakiautomaatide asukohad tulevad?</h3>
+      <p>Andmed pärinevad Omniva, DPD, Smartposti, Venipaki ja Unisendi avalikest pakiautomaatide nimekirjadest ning uuenevad regulaarselt, kuni ööpäevase viivitusega.</p>
+
+      <h3>Kas leht kasutab minu asukohta?</h3>
+      <p>Ei. Leht ei küsi sinu seadme asukohta. Tulemus sõltub ainult sellest, mida sa ise sisestad või kaardil valid.</p>
+
+      <h3>Kas saan otsida pakiautomaati nime järgi?</h3>
+      <p>Jah. Kirjuta näiteks kaupluse nimi ja linn, ning leht pakub sobivad pakiautomaadid juba tippimise ajal.</p>
+
+      <h3>Kuidas valida sihtkohas sobiv pakiautomaat?</h3>
+      <p>Sisesta saaja aadress või lähedal asuv tuntud koht, vaata nimekirjast kaugust ja vedajat ning vali see pakiautomaat, mis saajale kõige mugavam on. Kui vedaja pole veel selge, filtreeri vedaja järgi ja võrdle.</p>
+
+      <h3>Mida teha, kui valitud kohas pakiautomaati ei ole?</h3>
+      <p>Leht näitab ka siis kümmet lähimat pakiautomaati kaugusjärjekorras, nii et alati on näha, kus lähim pakiautomaat asub.</p>
+    </div>
+  </section>
 
 </div>
 
