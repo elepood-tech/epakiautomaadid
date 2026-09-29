@@ -229,14 +229,13 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 .addr-item .muted-inline{color:var(--muted);font-weight:400}
 
 .carrier-filter{
-  display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  display:flex;flex-wrap:nowrap;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;
   scrollbar-width:thin;padding-bottom:2px;
 }
 .carrier-filter::-webkit-scrollbar{height:4px}
-.carrier-filter .hint{flex:none;white-space:nowrap}
 .carrier-filter button{
   font-size:.76rem;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
-  border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:600;
+  border-radius:999px;padding:3px 9px;cursor:pointer;font-weight:600;
   flex:none;white-space:nowrap;
 }
 .carrier-filter button:hover{color:var(--ink);border-color:var(--muted)}
@@ -273,7 +272,7 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
   .searchbar button{padding:13px 16px;font-size:1rem}
   .searchbar input[type=text]{padding:13px 36px 13px 13px;font-size:1rem}
   .clear-btn{width:28px;height:28px;right:6px}
-  .carrier-filter button{padding:9px 13px;font-size:.8rem}
+  .carrier-filter button{padding:6px 10px;font-size:.8rem}
   .result-item{padding:14px 14px}
 }
 
@@ -345,7 +344,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v28</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v29</span>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -360,7 +359,6 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <div class="addr-dropdown" id="addrDropdown" hidden></div>
     <div class="hint" id="searchHint"></div>
     <div class="carrier-filter" id="carrierFilter">
-      <span class="hint">Vedaja:</span>
       <button type="button" data-source="" class="active">Kõik</button>
       <button type="button" data-source="omniva">Omniva</button>
       <button type="button" data-source="dpd">DPD</button>
