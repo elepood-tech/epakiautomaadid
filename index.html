@@ -173,8 +173,8 @@ body{
 
 .wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
 
-header.top{display:flex;flex-direction:column;gap:8px}
-header.top .top-title-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+header.top{display:flex;flex-direction:column;gap:2px}
+header.top .top-title-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 32px}
 header.top .top-meta-row{display:flex;flex-wrap:wrap;gap:8px}
 header.top h1{font-size:1.35rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
 header.top .tag{
@@ -186,7 +186,7 @@ header.top .theme-toggle{
   padding:3px 9px;
 }
 header.top .theme-toggle:hover{color:var(--ink);border-color:var(--muted)}
-header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
+header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;flex:1 1 320px;min-width:0}
 
 .status-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{
@@ -373,7 +373,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     </div>
     <div class="top-meta-row">
       <span class="tag">Reaalajas andmed</span>
-      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v35</span>
+      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v36</span>
       <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
     </div>
   </header>
