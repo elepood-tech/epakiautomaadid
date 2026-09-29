@@ -67,7 +67,12 @@ const MAAAMET_GEOCODE_URL = "https://inaadress.maaamet.ee/geocoder-api/api/onlin
 // "Leitud: ..." tekst sisaldab alati valitud linna/valda, et kasutaja
 // näeks kohe, kas asukoht klapib, ja saaks vajadusel linnanimega täpsustada.
 const MAAAMET_PLAIN_URL = "https://inaadress.maaamet.ee/geocoder-api/api/plain";
-const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad ise uuenevad
+// Vedajate asukohtade nimekirjad ei muutu tihti, seega piisab kord nädalas
+// uuendamisest. Kui mõni allikas parasjagu ei vasta, proovime seda
+// uuesti tihedamini — kaks korda nädalas (pool nädalase TTL-ist) — kuni
+// see taastub.
+const CACHE_TTL_SECONDS = 7 * 24 * 60 * 60; // kord nädalas
+const ERROR_RETRY_SECONDS = Math.round(CACHE_TTL_SECONDS / 2); // kaks korda nädalas
 
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
@@ -190,7 +195,7 @@ export default {
     // (kõigi külastajate vahel jagatud, päris 24h) jaoks eraldi
     // "Cloudflare-CDN-Cache-Control" päis, mida brauserid ignoreerivad.
     const browserMaxAge = anyError ? 30 : 120;
-    const edgeMaxAge = anyError ? 300 : CACHE_TTL_SECONDS;
+    const edgeMaxAge = anyError ? ERROR_RETRY_SECONDS : CACHE_TTL_SECONDS;
 
     const response = new Response(body, {
       status: 200,
@@ -201,11 +206,11 @@ export default {
       },
     });
 
-    // Puhverdame ka vea korral (lühikeseks ajaks, vt browserMaxAge/edgeMaxAge
+    // Puhverdame ka vea korral (lühikeseks ajaks, vt ERROR_RETRY_SECONDS
     // ülal) — muidu läheks IGA külastaja päring otse kõigi viie allika
-    // poole uuesti, seni kuni üks neist ei vasta. Nii proovitakse uuesti
-    // kõige rohkem korra iga edgeMaxAge (vaikimisi 5 min) jooksul, mitte
-    // iga külastaja kohta eraldi.
+    // poole uuesti, seni kuni üks neist ei vasta. Nii proovitakse katkise
+    // allika poole uuesti kõige rohkem korra iga edgeMaxAge jooksul
+    // (vaikimisi kaks korda nädalas), mitte iga külastaja kohta eraldi.
     ctx.waitUntil(cache.put(cacheKey, response.clone()));
     return response;
   },
