@@ -84,7 +84,7 @@ const ERROR_RETRY_SECONDS = Math.round(CACHE_TTL_SECONDS / 2); // kaks korda nä
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v10";
+const CACHE_VERSION = "v11";
 
 // Ainult meie enda lehele lubatud (mitte "*"), et keegi teine ei saaks seda
 // worker'it (ja meie Cloudflare arvestust) oma lehele "laenata". Kui lisandub
