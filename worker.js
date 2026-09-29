@@ -38,6 +38,13 @@
  *     ka veaga vastus, lihtsalt lühemaks ajaks (vt browserMaxAge/edgeMaxAge),
  *     nii et katkise allika poole proovitakse uuesti kõige rohkem korra
  *     iga paari minuti jooksul, mitte iga külastaja kohta eraldi.
+ *   - Andmete uuendussagedus 24h -> 7 päeva (allikad ei muutu tihti),
+ *     katkise allika taasproovimine 5 min -> 2x nädalas (ERROR_RETRY_SECONDS).
+ *   - fetchUnisend() PEATATUD: nende terminalinimekiri nõudis Origin/Referer
+ *     päist, mille me võltsisime kui oleks nende enda leht — see pole
+ *     korrektne ligipääs ilma nende loata, seega me ei tee enam sellele
+ *     URL-ile otsepäringut. Varem kogutud andmed jäävad KV kaudu lehele
+ *     nähtavaks (punase chipina), kuni saame loa või ametliku API.
  *
  * Endpointid:
  *   GET /lockers             -> kõik asukohad (Omniva + DPD + Smartpost + Venipak + Unisend), normaliseeritud
@@ -483,47 +490,57 @@ function parseCsv(text) {
   });
 }
 
+// PEATATUD (vt PR/commit ajalugu): Unisendi avalik terminalinimekiri nõuab
+// päringus Origin/Referer päist, mille me varem võltsisime nende endi
+// domeeniga (my.unisend.ee), et see läbi läheks. See ei ole korrektne
+// ligipääs, kui Unisend seda ise ei luba, seega me EI tee enam otse päringut
+// nende URL-ile, kuni oleme selleks luba küsinud ja saanud. Varem KV-sse
+// (LOCKER_CACHE, "last:unisend") salvestatud viimased teadaolevad andmed
+// jäävad lehele alles, aga vedaja chip näitab neid punasena ("viimased
+// teadaolevad"), kuna neid enam ei värskendata.
+//
+// Kui saame Unisendilt korrektse loa (või leiame ametliku API), taasta
+// päring nii: eemalda allolev lühike return ja võta kasutusele allpool
+// kommenteeritud algne implementatsioon (mis kasutab UNISEND_URL ja
+// parseCsv() funktsiooni — need on siin failis endiselt olemas).
 async function fetchUnisend() {
-  try {
-    // Nende avalik terminalinimekiri nõuab korrektset Origin/Referer päist
-    // (sama tehnika, mis DPD User-Agent'i puhul — CORS-kontroll, mitte
-    // autentimine: ilma selleta annab "Origin header is missing" vea).
-    const res = await fetch(UNISEND_URL, {
-      headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
-      cf: { cacheTtl: CACHE_TTL_SECONDS },
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const rows = parseCsv(text);
-    const out = rows
-      .filter((r) => !r.countryCode || r.countryCode === "EE")
-      .map((r) => {
-        const lat = parseFloat(r.latitude);
-        const lon = parseFloat(r.longitude);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-        return {
-          source: "unisend",
-          name: r.name || "Unisend asukoht",
-          street: r.address || null,
-          city: r.city || null,
-          county: null,
-          zip: r.postalCode || null,
-          // Unisendi kirjed on väliautomaadid (nagu teisedki peale Smartposti),
-          // seega avatud aeg pole oluline. "comment" väli on ka läbivalt
-          // samasugune leedukeelne üldtekst, mitte konkreetse asukoha
-          // kirjeldus, seega ei näita seda kasutajale.
-          hours: null,
-          locationInfo: null,
-          lat,
-          lon,
-        };
-      })
-      .filter(Boolean);
-    return { data: out, error: null };
-  } catch (err) {
-    return { data: [], error: String(err && err.message ? err.message : err) };
-  }
+  return { data: [], error: "Ühendus Unisendiga on peatatud, kuni saame selleks nende käest loa." };
 }
+
+// async function fetchUnisendOriginal() {
+//   try {
+//     const res = await fetch(UNISEND_URL, {
+//       headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
+//       cf: { cacheTtl: CACHE_TTL_SECONDS },
+//     });
+//     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+//     const text = await res.text();
+//     const rows = parseCsv(text);
+//     const out = rows
+//       .filter((r) => !r.countryCode || r.countryCode === "EE")
+//       .map((r) => {
+//         const lat = parseFloat(r.latitude);
+//         const lon = parseFloat(r.longitude);
+//         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+//         return {
+//           source: "unisend",
+//           name: r.name || "Unisend asukoht",
+//           street: r.address || null,
+//           city: r.city || null,
+//           county: null,
+//           zip: r.postalCode || null,
+//           hours: null,
+//           locationInfo: null,
+//           lat,
+//           lon,
+//         };
+//       })
+//       .filter(Boolean);
+//     return { data: out, error: null };
+//   } catch (err) {
+//     return { data: [], error: String(err && err.message ? err.message : err) };
+//   }
+// }
 
 async function fetchSmartpost() {
   try {
