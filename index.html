@@ -173,10 +173,11 @@ body{
 
 .wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:14px}
 
-header.top{display:flex;flex-direction:column;gap:2px}
-header.top .top-title-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 32px}
-header.top .top-meta-row{display:flex;flex-wrap:wrap;gap:8px}
-header.top h1{font-size:1.35rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 32px}
+header.top h1{order:1;font-size:1.35rem;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header.top .top-meta-row{
+  order:3;display:flex;flex-wrap:wrap;gap:8px;flex:1 0 100%;
+}
 header.top .tag{
   font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap;
@@ -186,7 +187,7 @@ header.top .theme-toggle{
   padding:3px 9px;
 }
 header.top .theme-toggle:hover{color:var(--ink);border-color:var(--muted)}
-header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;flex:1 1 320px;min-width:0}
+header.top p.lede{order:2;margin:0;color:var(--muted);font-size:.88rem;flex:1 1 320px;min-width:0}
 
 .status-row{display:flex;flex-wrap:wrap;gap:8px}
 .chip{
@@ -279,6 +280,10 @@ header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;flex:1 1 320px;mi
      kohe asukohti kaardil, ilma et peaks enne nimekirjast mööda kerima. */
   .layout #map{order:1}
   .layout > .panel{order:2}
+  /* Mobiilis tuleb "Reaalajas andmed"/versioon/teemalüliti rida kohe
+     pealkirja alla, sissejuhatav lõik jääb selle alla. */
+  header.top .top-meta-row{order:2}
+  header.top p.lede{order:3}
 }
 
 /* Mobiilis suuremad puutepinnad ja natuke kompaktsem tekst, et leht oleks
@@ -367,15 +372,13 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
 <div class="wrap">
 
   <header class="top">
-    <div class="top-title-row">
-      <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
-      <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
-    </div>
+    <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
     <div class="top-meta-row">
       <span class="tag">Reaalajas andmed</span>
-      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v36</span>
+      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v37</span>
       <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
     </div>
+    <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
   </header>
 
   <div class="panel searchbar">
@@ -414,14 +417,6 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <div id="map"></div>
   </div>
 
-  <div class="status-row" id="statusRow">
-    <span class="chip loading" id="chipOmniva"><span class="dot"></span>Omniva andmed laadivad&hellip;</span>
-    <span class="chip loading" id="chipDpd"><span class="dot"></span>DPD andmed laadivad&hellip;</span>
-    <span class="chip loading" id="chipSmartpost"><span class="dot"></span>Smartpost andmed laadivad&hellip;</span>
-    <span class="chip loading" id="chipVenipak"><span class="dot"></span>Venipak andmed laadivad&hellip;</span>
-    <span class="chip loading" id="chipUnisend"><span class="dot"></span>Unisend andmed laadivad&hellip;</span>
-  </div>
-
   <section class="content-section" aria-label="Rohkem infot pakiautomaatide kaardi kohta">
     <h2>Pakiautomaatide kaart Eestis ühel lehel</h2>
     <p>Iga vedaja hoiab oma pakiautomaatide asukohti eraldi. See leht toob Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid kokku ühele kaardile, et sa ei peaks iga vedaja kodulehte eraldi avama. Pakiautomaatide kaart katab Eestit Tallinnast ja Tartust väikeasulateni ning sobib nii enda ümbruse kui ka teise linna või piirkonna pakiautomaatide vaatamiseks.</p>
@@ -456,6 +451,14 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <p>Leht näitab ka siis kümmet lähimat pakiautomaati kaugusjärjekorras, nii et alati on näha, kus lähim pakiautomaat asub.</p>
     </div>
   </section>
+
+  <div class="status-row" id="statusRow">
+    <span class="chip loading" id="chipOmniva"><span class="dot"></span>Omniva andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipDpd"><span class="dot"></span>DPD andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipSmartpost"><span class="dot"></span>Smartpost andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipVenipak"><span class="dot"></span>Venipak andmed laadivad&hellip;</span>
+    <span class="chip loading" id="chipUnisend"><span class="dot"></span>Unisend andmed laadivad&hellip;</span>
+  </div>
 
 </div>
 
