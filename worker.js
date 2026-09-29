@@ -66,9 +66,15 @@ const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h — sama sagedusega kui allikad i
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
 const CACHE_VERSION = "v10";
 
+// Ainult meie enda lehele lubatud (mitte "*"), et keegi teine ei saaks seda
+// worker'it (ja meie Cloudflare arvestust) oma lehele "laenata". Kui lisandub
+// oma domeen (mitte *.pages.dev), tuleb see siia samuti lisada.
+const ALLOWED_ORIGIN = "https://epakiautomaadid.pages.dev";
+
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*", // production: vaheta oma domeeni vastu
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Vary": "Origin",
   "Content-Type": "application/json; charset=utf-8",
 };
 
