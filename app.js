@@ -201,7 +201,7 @@
           if (list.length) {
             state[key] = list;
             if (stale[key]) {
-              setChip(document.getElementById(chipId), "bad", label + " pakiautomaadid: <b>" + list.length + "</b> (viimased teadaolevad, allikas hetkel ei vasta)");
+              setChip(document.getElementById(chipId), "bad", label + " pakiautomaadid: <b>" + list.length + "</b>");
             } else {
               setChip(document.getElementById(chipId), "ok", label + " pakiautomaadid: <b>" + list.length + "</b>");
             }
