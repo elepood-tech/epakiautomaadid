@@ -1,6 +1,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lähim Pakiautomaat</title>
+<script>
+// Rakenda salvestatud teemaeelistus enne CSS-i renderdamist, et vältida valge/tumeda vilkumist.
+(function(){
+  try{
+    var t = localStorage.getItem("theme-preference");
+    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  }catch(e){}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -168,6 +177,11 @@ header.top .tag{
   font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
   border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap;
 }
+header.top .theme-toggle{
+  background:var(--surface);cursor:pointer;font-size:.85rem;line-height:1;
+  padding:3px 9px;
+}
+header.top .theme-toggle:hover{color:var(--ink);border-color:var(--muted)}
 header.top p.lede{margin:0;color:var(--muted);font-size:.88rem;max-width:60ch}
 
 .status-row{display:flex;flex-wrap:wrap;gap:8px}
@@ -344,7 +358,8 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
   <header class="top">
     <h1>Lähim pakiautomaat</h1>
     <span class="tag">Reaalajas andmed</span>
-    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v32</span>
+    <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v33</span>
+    <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
     <p class="lede">Sisesta aadress ja leia lähim pakiautomaat. Omniva ja DPD asukohad tulevad reaalajas otse nende endi avalikest failidest, läbi väikese vahepealse serveri (CORS-i pärast).</p>
   </header>
 
@@ -1187,6 +1202,47 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     hint.textContent = "Lähtepunkt: " + pt.label;
     renderResults(pt);
   });
+
+  // Teema (hele/tume) valik: vaikimisi käib seadme/brauseri eelistuse
+  // järgi (CSS prefers-color-scheme), aga nupuga saab valida käsitsi ja
+  // valik jääb localStorage'i meelde.
+  (function(){
+    var THEME_KEY = "theme-preference";
+    var root = document.documentElement;
+    var btn = document.getElementById("themeToggle");
+    function savedTheme(){
+      try { return localStorage.getItem(THEME_KEY); } catch(e){ return null; }
+    }
+    function systemTheme(){
+      return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    }
+    function effectiveTheme(){
+      var saved = savedTheme();
+      return (saved === "light" || saved === "dark") ? saved : systemTheme();
+    }
+    function updateBtn(){
+      if (!btn) return;
+      var eff = effectiveTheme();
+      btn.innerHTML = eff === "dark" ? "&#9728;" : "&#9789;";
+      var label = eff === "dark" ? "Lülitu heledale teemale" : "Lülitu tumedale teemale";
+      btn.setAttribute("aria-label", label);
+      btn.title = label;
+    }
+    updateBtn();
+    if (btn){
+      btn.addEventListener("click", function(){
+        var next = effectiveTheme() === "dark" ? "light" : "dark";
+        try { localStorage.setItem(THEME_KEY, next); } catch(e){}
+        root.setAttribute("data-theme", next);
+        updateBtn();
+      });
+    }
+    if (window.matchMedia){
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){
+        if (!savedTheme()) updateBtn();
+      });
+    }
+  })();
 
   loadLockers();
 })();
