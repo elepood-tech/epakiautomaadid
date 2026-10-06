@@ -136,6 +136,22 @@ function carrierSummary(c) {
   return SOURCE_ORDER.filter((s) => c.counts[s]).map((s) => `${SOURCE_LABELS[s]} ${c.counts[s]}`).join(", ");
 }
 
+// Sisseütlev kääne ("Tartus"). Teadlikult käsitsi: automaatne tuletamine annaks vigu.
+// Tundmatu linna puhul jäetakse kääne ära ja kasutatakse neutraalset sõnastust.
+const LOCATIVE = {
+  tallinn: "Tallinnas", tartu: "Tartus", parnu: "Pärnus", narva: "Narvas",
+  "kohtla-jarve": "Kohtla-Järvel", viljandi: "Viljandis", keila: "Keilas",
+  maardu: "Maardus", rakvere: "Rakveres", haapsalu: "Haapsalus", voru: "Võrus",
+  paide: "Paides", sillamae: "Sillamäel", loksa: "Loksal",
+  "narva-joesuu": "Narva-Jõesuus", kuressaare: "Kuressaares", johvi: "Jõhvis",
+  valga: "Valgas", jogeva: "Jõgeval", rapla: "Raplas", tapa: "Tapal",
+  kunda: "Kundas", elva: "Elvas", polva: "Põlvas", turi: "Türil", sindi: "Sindis",
+  saue: "Sauel", kehra: "Kehras", kardla: "Kärdlas", tamsalu: "Tamsalus",
+  otepaa: "Otepääl", kivioli: "Kiviõlis", kohila: "Kohilas", paldiski: "Paldiskis",
+  rapina: "Räpinas", antsla: "Antslas", mustvee: "Mustvees", vohma: "Võhmas",
+  "abja-paluoja": "Abja-Paluojal", "kilingi-nomme": "Kilingi-Nõmmes",
+};
+
 const EXTRA_CSS = `
 .crumbs{font-size:.78rem;color:var(--muted)}
 .crumbs a{color:inherit}
@@ -150,8 +166,16 @@ const EXTRA_CSS = `
 function renderCityPage(c, related, shared) {
   const total = c.items.length;
   const url = `${SITE_URL}/${c.slug}`;
-  const title = `${c.name} pakiautomaadid – ${total} ${placesWord(total)} kaardil | Lähim pakiautomaat`;
-  const description = `${c.name} pakiautomaadid: ${total} ${placesWord(total)} (${carrierSummary(c)}). Vaata asukohti kaardil ja nimekirjas ning leia lähim pakiautomaat.`;
+  const loc = LOCATIVE[c.slug];
+  const title = loc
+    ? `${c.name} pakiautomaadid – ${total} ${placesWord(total)} | Pakiautomaadid ${loc}`
+    : `${c.name} pakiautomaadid – ${total} ${placesWord(total)} kaardil | Lähim pakiautomaat`;
+  const description = loc
+    ? `Pakiautomaadid ${loc}: ${total} ${placesWord(total)} (${carrierSummary(c)}). ${c.name} pakiautomaatide kaart ja nimekiri – leia lähim pakiautomaat.`
+    : `${c.name} pakiautomaadid: ${total} ${placesWord(total)} (${carrierSummary(c)}). Vaata asukohti kaardil ja nimekirjas ning leia lähim pakiautomaat.`;
+  const ledeIntro = loc
+    ? `Pakiautomaate ja pakipunkte on ${loc} kokku ${total}: ${carrierSummary(c)}.`
+    : `${c.name} asukohas on kokku ${total} pakiautomaati ja pakipunkti: ${carrierSummary(c)}.`;
   const present = SOURCE_ORDER.filter((s) => c.counts[s]);
   const withHours = c.items.filter((i) => i.hours);
 
@@ -227,7 +251,7 @@ ${shared.css}${EXTRA_CSS}</style>
 
   <header class="top">
     <h1>${esc(c.name)} pakiautomaadid</h1>
-    <p class="lede">${esc(c.name)} asukohas on kokku ${total} pakiautomaati ja pakipunkti: ${esc(carrierSummary(c))}. Siit näed need kõik ühel kaardil, et enne e-poes vedaja valimist kontrollida, kas sulle või saajale sobiv pakiautomaat on olemas. <a href="/">Otsi aadressi või nime järgi</a>, et leida lähim pakiautomaat täpselt oma asukoha ümber.</p>
+    <p class="lede">${esc(ledeIntro)} Siit näed need kõik ühel kaardil, et enne e-poes vedaja valimist kontrollida, kas sulle või saajale sobiv pakiautomaat on olemas. <a href="/">Otsi aadressi või nime järgi</a>, et leida lähim pakiautomaat täpselt oma asukoha ümber.</p>
   </header>
 
   <div id="map" role="img" aria-label="Kaart: ${esc(c.name)} pakiautomaadid"></div>
