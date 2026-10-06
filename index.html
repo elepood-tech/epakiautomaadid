@@ -352,6 +352,10 @@ header.top p.lede{order:2;margin:0;color:var(--muted);font-size:.88rem;flex:1 1 
 .content-section h3{font-size:.92rem;color:var(--ink);margin:14px 0 4px}
 .content-section p{max-width:72ch;margin:0 0 4px}
 .content-section .faq p{margin-bottom:2px}
+.city-links h2{font-size:1rem;color:var(--ink);margin:22px 0 8px}
+.city-links ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.city-links a{display:inline-block;font-size:.8rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 11px;text-decoration:none;background:var(--surface)}
+.city-links a:hover{color:var(--ink);border-color:var(--muted)}
 
 footer.note{font-size:.76rem;color:var(--muted);line-height:1.6;padding:2px 2px 4px}
 footer.note a{color:inherit}
@@ -367,7 +371,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
     <div class="top-meta-row">
       <span class="tag">Reaalajas andmed</span>
-      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v40</span>
+      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v41</span>
       <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
     </div>
     <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
@@ -443,6 +447,9 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
       <p>Leht näitab ka siis kümmet lähimat pakiautomaati kaugusjärjekorras, nii et alati on näha, kus lähim pakiautomaat asub.</p>
     </div>
   </section>
+
+  <!--CITY-LINKS-START-->
+  <!--CITY-LINKS-END-->
 
   <div class="status-row" id="statusRow">
     <span class="chip loading" id="chipOmniva"><span class="dot"></span>Omniva andmed laadivad&hellip;</span>

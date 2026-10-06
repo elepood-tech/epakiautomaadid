@@ -1,0 +1,5 @@
+# Genereeritakse deploy'l (scripts/build-city-pages.mjs), ei kuulu repo'sse
+/*.html
+!/index.html
+/sitemap.xml
+/robots.txt
