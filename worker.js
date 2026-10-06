@@ -85,6 +85,8 @@ const ERROR_RETRY_SECONDS = Math.round(CACHE_TTL_SECONDS / 2); // kaks korda nä
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
 const CACHE_VERSION = "v11";
+// Linnalehtede build'i minimaalne vahe (deploy hook, vt triggerSiteRebuild).
+const MIN_REBUILD_INTERVAL_SECONDS = 5 * 24 * 60 * 60;
 
 // Ainult meie enda lehele lubatud (mitte "*"), et keegi teine ei saaks seda
 // worker'it (ja meie Cloudflare arvestust) oma lehele "laenata". Kui lisandub
@@ -219,9 +221,44 @@ export default {
     // allika poole uuesti kõige rohkem korra iga edgeMaxAge jooksul
     // (vaikimisi kaks korda nädalas), mitte iga külastaja kohta eraldi.
     ctx.waitUntil(cache.put(cacheKey, response.clone()));
+
+    // Linnalehed (SEO) ehitatakse Cloudflare Pages'i build'i käigus nende
+    // andmete põhjal. Kui oleme just tõmmanud värsked andmed, käivitame
+    // uue build'i. Unisend on pausil ja annab alati vea, seetõttu ei arvesta
+    // me seda; päring ühe allikaga (?source=) ei ole täisandmestik.
+    if (!source) {
+      const freshOk = !omnivaResult.error && !dpdResult.error && !smartpostResult.error && !venipakResult.error;
+      if (freshOk) ctx.waitUntil(triggerSiteRebuild(env));
+    }
+
     return response;
   },
 };
+
+// Käivitab Pages'i deploy hook'i, kuid mitte tihedamini kui
+// MIN_REBUILD_INTERVAL_SECONDS (KV märge). Hook'i URL on salajane ja asub
+// Workeri saladuses DEPLOY_HOOK_URL — koodis ega GitHubis seda pole.
+// Kui saladust või KV-d pole, ei tee see midagi.
+async function triggerSiteRebuild(env) {
+  const hookUrl = env && env.DEPLOY_HOOK_URL;
+  const kv = env && env.LOCKER_CACHE;
+  if (!hookUrl || !kv) return;
+  const KEY = "rebuild:last";
+  try {
+    const last = Number(await kv.get(KEY)) || 0;
+    if (Date.now() - last < MIN_REBUILD_INTERVAL_SECONDS * 1000) return;
+    // Märge enne päringut, et samaaegsed külastajad ei käivitaks mitut build'i.
+    await kv.put(KEY, String(Date.now()));
+    const res = await fetch(hookUrl, { method: "POST" });
+    if (!res.ok) {
+      await kv.delete(KEY); // luba hiljem uuesti proovida
+      console.log("Deploy hook ebaõnnestus: HTTP " + res.status);
+    }
+  } catch (err) {
+    try { await kv.delete(KEY); } catch (_) { /* ignoreeri */ }
+    console.log("Deploy hook viga: " + (err && err.message));
+  }
+}
 
 // Kutsub allika fetch-funktsiooni. Kui see õnnestub ja annab andmeid, salvestab
 // tulemuse Cloudflare KV-sse "viimase teadaoleva hea seisuna". Kui see
