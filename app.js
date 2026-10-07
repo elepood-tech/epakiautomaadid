@@ -595,6 +595,8 @@
         ? " — kui see pole õige koht, täpsusta linna/valla nimega (nt “" + text + ", Tartu”)."
         : "";
       hint.textContent = "Leitud: " + pt.label + extra;
+      // Roheline kinnitus on peidetud; täpsustusvihje on aga kasulik, jäägu nähtavaks.
+      if (extra) hint.className = "hint";
       renderResults(pt);
     }).catch(function(err){
       hint.className = "hint error";

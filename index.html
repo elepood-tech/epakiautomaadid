@@ -225,7 +225,7 @@ header.top p.lede{order:2;margin:0;color:var(--muted);font-size:.88rem;flex:1 1 
 .searchbar button:disabled{opacity:.55;cursor:default}
 .hint{font-size:.78rem;color:var(--muted)}
 .hint.error{color:var(--bad)}
-.hint.ok{color:var(--good)}
+.hint.ok{display:none} /* eduka otsingu roheline kinnitus ei võta ruumi; vead ja vihjed jäävad */
 
 .addr-dropdown{
   border:1px solid var(--line);border-radius:10px;overflow:hidden;
@@ -371,7 +371,7 @@ footer.note .src .sw{width:8px;height:8px;border-radius:2px;flex:none}
     <h1>Lähim pakiautomaat – pakiautomaatide kaart Eestis</h1>
     <div class="top-meta-row">
       <span class="tag">Reaalajas andmed</span>
-      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v46</span>
+      <span class="tag" id="appVersion" title="Lehe versioon — kasvab iga uuendusega">v47</span>
       <button type="button" id="themeToggle" class="tag theme-toggle" aria-label="Vaheta hele/tume teema" title="Vaheta hele/tume teema">&#9789;</button>
     </div>
     <p class="lede">Pakiautomaatide kaart Eestis koondab Omniva, DPD, Smartpost, Venipak ja Unisend pakiautomaadid ühele kaardile. Sisesta aadress või pakiautomaadi nimi või tee kaardil topeltklõps, et koht ise valida, ja vaata, millised pakiautomaadid on selle koha ümber. Nii leiad lähima pakiautomaadi nii enda ümbruses kui ka paki saaja sihtkohas.</p>
