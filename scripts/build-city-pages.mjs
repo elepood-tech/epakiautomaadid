@@ -18,8 +18,7 @@
  *   MIN_TOTAL_LOCKERS   kaitse: kui andmeid on vähem, katkestame ehituse (vaikimisi 500),
  *                       et tühja/katkise vastusega ei avaldataks tühje lehti
  *
- * Unisend jäetakse lehtedelt välja, kuni meil on nende käest selleks luba
- * (vt worker.js fetchUnisend()).
+ * Unisend on kaasatud (Unisend kinnitas kirjalikult, et API/CSV kasutamine on lubatud).
  *
  * Genereeritud failid (<linn>.html, sitemap.xml, robots.txt) on .gitignore'is —
  * need tekivad deploy'l, mitte ei kuulu repo'sse.
@@ -36,8 +35,8 @@ const MIN_TOTAL_LOCKERS = Number(process.env.MIN_TOTAL_LOCKERS || 500);
 const RELATED_COUNT = 8;
 const HOME_LINKS_COUNT = 40;
 
-const SOURCE_LABELS = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak" };
-const SOURCE_ORDER = ["omniva", "dpd", "smartpost", "venipak"];
+const SOURCE_LABELS = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak", unisend: "Unisend" };
+const SOURCE_ORDER = ["omniva", "dpd", "smartpost", "venipak", "unisend"];
 const RESERVED_SLUGS = new Set(["index", "app", "worker", "theme-init", "city-map", "sitemap", "robots", "readme", "404", "privaatsus", "tingimused", "kontakt", "fonts", "vendor"]);
 
 const args = process.argv.slice(2);
@@ -94,7 +93,7 @@ async function loadData() {
 // ---------- andmete grupeerimine ----------
 function groupByCity(rawLockers) {
   const usable = rawLockers
-    .filter((r) => r && SOURCE_LABELS[r.source]) // Unisend ja tundmatud allikad välja
+    .filter((r) => r && SOURCE_LABELS[r.source]) // tundmatud allikad välja
     .filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lon)))
     .map((r) => ({
       source: r.source,
@@ -344,7 +343,7 @@ ${urls.map((u) => `  <url><loc>${esc(u)}</loc><lastmod>${today}</lastmod></url>`
   // ---- aruanne (näitab ehituse logis, kas linnanimed on normaliseeritud mõistlikult) ----
   const small = allCities.length - cities.length;
   const covered = cities.reduce((s, c) => s + c.items.length, 0);
-  console.log(`Asukohti kasutatavaid: ${usableCount} (Unisend välja jäetud)`);
+  console.log(`Asukohti kasutatavaid: ${usableCount} `);
   console.log(`Unikaalseid linnanimesid (normaliseeritult): ${allCities.length}`);
   console.log(`Lehti loodud: ${cities.length} (kriteerium: vähemalt ${MIN_LOCKERS} asukohta), katab ${covered} asukohta`);
   console.log(`Vähem kui ${MIN_LOCKERS} asukohaga, lehte ei saanud: ${small} linna`);

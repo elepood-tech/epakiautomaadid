@@ -10,7 +10,7 @@
   try { items = JSON.parse(el.textContent); } catch (e) { return; }
   if (!items.length) return;
 
-  var labels = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak" };
+  var labels = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak", unisend: "Unisend" };
   var map = L.map(mapEl, { scrollWheelZoom: false });
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
