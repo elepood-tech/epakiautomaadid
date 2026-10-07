@@ -704,7 +704,10 @@
     });
 
     if (bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      // Zoomime nii lähedale, kui asukoht + lähimad automaadid mahuvad kaardile
+      // (tihedas linnas jõuab see tänavatasemele, hõredas piirkonnas zoomib
+      // automaatselt kaugemale, et kõik kümme oleksid näha).
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 17 });
     } else {
       map.setView([pt.lat, pt.lon], 13);
     }
