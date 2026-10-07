@@ -84,7 +84,7 @@ const ERROR_RETRY_SECONDS = Math.round(CACHE_TTL_SECONDS / 2); // kaks korda nä
 // Tõstetakse iga kord, kui /lockers vastuse KUJU muutub (uus allikas, väljade
 // muudatus vms) — nii ei jää uus deploy kunagi kinni eelmise koodiversiooni
 // puhverdatud (nt vigase) vastuse taha, kuna cache key muutub koos sellega.
-const CACHE_VERSION = "v12";
+const CACHE_VERSION = "v13";
 // Linnalehtede build'i minimaalne vahe (deploy hook, vt triggerSiteRebuild).
 const MIN_REBUILD_INTERVAL_SECONDS = 5 * 24 * 60 * 60;
 
