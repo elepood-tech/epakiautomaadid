@@ -266,7 +266,7 @@ async function triggerSiteRebuild(env) {
 // laadimise andmed ja kasutab neid selle asemel, et tagasi langeda väikesele
 // sisseehitatud näidiskomplektile.
 async function withLastKnownGood(sourceName, fetchFn, env, ctx) {
-  const result = await fetchFn();
+  const result = await fetchFn(env);
   const kv = env && env.LOCKER_CACHE;
 
   if (!result.error && result.data.length) {
@@ -527,57 +527,106 @@ function parseCsv(text) {
   });
 }
 
-// PEATATUD (vt PR/commit ajalugu): Unisendi avalik terminalinimekiri nõuab
-// päringus Origin/Referer päist, mille me varem võltsisime nende endi
-// domeeniga (my.unisend.ee), et see läbi läheks. See ei ole korrektne
-// ligipääs, kui Unisend seda ise ei luba, seega me EI tee enam otse päringut
-// nende URL-ile, kuni oleme selleks luba küsinud ja saanud. Varem KV-sse
-// (LOCKER_CACHE, "last:unisend") salvestatud viimased teadaolevad andmed
-// jäävad lehele alles, aga vedaja chip näitab neid punasena ("viimased
-// teadaolevad"), kuna neid enam ei värskendata.
-//
-// Kui saame Unisendilt korrektse loa (või leiame ametliku API), taasta
-// päring nii: eemalda allolev lühike return ja võta kasutusele allpool
-// kommenteeritud algne implementatsioon (mis kasutab UNISEND_URL ja
-// parseCsv() funktsiooni — need on siin failis endiselt olemas).
-async function fetchUnisend() {
-  return { data: [], error: "Ühendus Unisendiga on peatatud, kuni saame selleks nende käest loa." };
+// ---------- Unisend (LP Express) ametlik API ----------
+// Dokumentatsioon: https://www.post.lt/savitarna/api_doc.html
+// Kasutaja ja parool on Cloudflare'i secretid (UNISEND_USER, UNISEND_PASS),
+// mitte repos. Seadista: `wrangler secret put UNISEND_USER` / `UNISEND_PASS`.
+// NB! Unisendi tulemüür blokeerib brauseri-taolise User-Agent'i, seega
+// siin kasutame eraldi, mitte-brauseri User-Agent'i (mitte UPSTREAM_HEADERS).
+const UNISEND_API_BASE = "https://api-manosiuntos.post.lt";
+const UNISEND_TERMINAL_PATH = "/api/v2/terminal";
+const UNISEND_UA = "epakiautomaadid/1.0";
+// 5 vale sisselogimist blokeerivad konto 15 min, seega ebaõnnestunud
+// sisselogimist ei korda enne selle ajani.
+const UNISEND_LOGIN_BACKOFF_SECONDS = 20 * 60;
+
+async function unisendToken(env) {
+  const kv = env && env.LOCKER_CACHE;
+  if (kv) {
+    const cached = await kv.get("unisend:token", "json");
+    if (cached && cached.token && cached.expiresAt > Date.now() + 60000) return cached.token;
+    const blocked = await kv.get("unisend:login-blocked");
+    if (blocked) throw new Error("Unisend sisselogimine ebaõnnestus hiljuti, ootan enne uut katset");
+  }
+  const url = new URL(UNISEND_API_BASE + "/oauth/token");
+  url.searchParams.set("grant_type", "password");
+  url.searchParams.set("username", env.UNISEND_USER);
+  url.searchParams.set("password", env.UNISEND_PASS);
+  url.searchParams.set("scope", "read+write+API_CLIENT");
+  // URLSearchParams kodeerib '+' kui %2B — sama kuju on dokumentatsiooni näites.
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: { "User-Agent": UNISEND_UA, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    if (kv) await kv.put("unisend:login-blocked", "1", { expirationTtl: UNISEND_LOGIN_BACKOFF_SECONDS });
+    throw new Error(`Unisend sisselogimine: HTTP ${res.status}`);
+  }
+  const body = await res.json();
+  if (!body || !body.access_token) throw new Error("Unisend sisselogimine: vastuses puudub access_token");
+  const ttl = Number(body.expires_in) || 3600;
+  if (kv) {
+    await kv.put(
+      "unisend:token",
+      JSON.stringify({ token: body.access_token, expiresAt: Date.now() + ttl * 1000 }),
+      { expirationTtl: Math.max(60, ttl - 60) }
+    );
+  }
+  return body.access_token;
 }
 
-// async function fetchUnisendOriginal() {
-//   try {
-//     const res = await fetch(UNISEND_URL, {
-//       headers: { ...UPSTREAM_HEADERS, Origin: "https://my.unisend.ee", Referer: "https://my.unisend.ee/" },
-//       cf: { cacheTtl: CACHE_TTL_SECONDS },
-//     });
-//     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-//     const text = await res.text();
-//     const rows = parseCsv(text);
-//     const out = rows
-//       .filter((r) => !r.countryCode || r.countryCode === "EE")
-//       .map((r) => {
-//         const lat = parseFloat(r.latitude);
-//         const lon = parseFloat(r.longitude);
-//         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-//         return {
-//           source: "unisend",
-//           name: r.name || "Unisend asukoht",
-//           street: r.address || null,
-//           city: r.city || null,
-//           county: null,
-//           zip: r.postalCode || null,
-//           hours: null,
-//           locationInfo: null,
-//           lat,
-//           lon,
-//         };
-//       })
-//       .filter(Boolean);
-//     return { data: out, error: null };
-//   } catch (err) {
-//     return { data: [], error: String(err && err.message ? err.message : err) };
-//   }
-// }
+// Vastuse väljanimed ei ole dokumentatsioonis kirjas, seega loeme mitut
+// tõenäolist nime. Kui koordinaate ei leita, tagastame veateate koos
+// esimese kirje võtmetega, et saaksime mappingu parandada.
+function pick(o, keys) {
+  for (const k of keys) if (o && o[k] !== undefined && o[k] !== null && o[k] !== "") return o[k];
+  return null;
+}
+
+async function fetchUnisend(env) {
+  if (!env || !env.UNISEND_USER || !env.UNISEND_PASS) {
+    return { data: [], error: "Unisendi ligipääs pole seadistatud (puuduvad secretid)." };
+  }
+  try {
+    const token = await unisendToken(env);
+    const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH, {
+      headers: { "User-Agent": UNISEND_UA, Accept: "application/json", Authorization: "Bearer " + token },
+    });
+    if (!res.ok) throw new Error(`Unisend terminalid: HTTP ${res.status}`);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : data?.content || data?.data || data?.terminals || data?.items || [];
+    const out = list
+      .filter((r) => {
+        const c = pick(r, ["countryCode", "country", "country_code"]);
+        return !c || String(c).toUpperCase() === "EE";
+      })
+      .map((r) => {
+        const lat = parseFloat(pick(r, ["latitude", "lat", "y"]) ?? pick(r.coordinates || r.location || {}, ["latitude", "lat", "y"]));
+        const lon = parseFloat(pick(r, ["longitude", "lng", "lon", "x"]) ?? pick(r.coordinates || r.location || {}, ["longitude", "lng", "lon", "x"]));
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return {
+          source: "unisend",
+          name: pick(r, ["name", "title", "displayName"]) || "Unisend asukoht",
+          street: pick(r, ["address", "street", "addressLine"]),
+          city: pick(r, ["city", "locality", "town"]),
+          county: null,
+          zip: pick(r, ["postalCode", "zip", "postcode"]),
+          hours: null,
+          locationInfo: pick(r, ["comment", "description", "locationInfo"]),
+          lat,
+          lon,
+        };
+      })
+      .filter(Boolean);
+    if (!out.length) {
+      const sample = list[0] ? Object.keys(list[0]).join(",") : "tühi vastus";
+      throw new Error("Unisend: ei leidnud kasutatavaid kirjeid (esimese kirje väljad: " + sample + ")");
+    }
+    return { data: out, error: null };
+  } catch (err) {
+    return { data: [], error: String(err && err.message ? err.message : err) };
+  }
+}
 
 async function fetchSmartpost() {
   try {

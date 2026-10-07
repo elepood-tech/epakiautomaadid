@@ -19,3 +19,14 @@ Worker teeb päringud serveripoolelt, kuna need serverid ei saada brauserile COR
 
 1. **Cloudflare Pages**: ühenda see GitHub repo Cloudflare Pages projektiga, build command tühi, väljundikaust juurikas (`/`) — deploy'b `index.html` automaatselt iga push'i peale.
 2. **Cloudflare Workers**: ühenda `worker.js` Cloudflare Workers Builds'i (Git integratsioon) sama repo peale, et see automaatselt uuenda.
+
+## Unisend (ametlik API)
+
+Unisendi terminalid tulevad ametlikust API-st (`/api/v2/terminal`). Sisselogimisandmed on Cloudflare Workeri secretid, mitte repos:
+
+```
+wrangler secret put UNISEND_USER
+wrangler secret put UNISEND_PASS
+```
+
+Ilma secretiteta jääb Unisend välja lülitatuks. Unisendi päringud kasutavad mitte-brauseri User-Agent'i (nende tulemüür blokeerib brauseri oma).
