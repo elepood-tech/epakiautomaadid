@@ -100,10 +100,10 @@ const CORS_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
 };
 
-// Brauseri-taolised päised — mõned serverid (DPD) blokeerivad päringuid ilma nendeta.
+// Ausalt tuvastatav User-Agent (me ei maskeeru brauseriks). Kontakt on avalik,
+// et allikate haldurid saaksid vajadusel meiega ühendust võtta.
 const UPSTREAM_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+  "User-Agent": "epakiautomaadid/1.0 (+https://epakiautomaadid.pages.dev/kontakt.html)",
   Accept: "application/json,text/plain,*/*",
 };
 

@@ -38,7 +38,7 @@ const HOME_LINKS_COUNT = 40;
 
 const SOURCE_LABELS = { omniva: "Omniva", dpd: "DPD", smartpost: "Smartpost", venipak: "Venipak" };
 const SOURCE_ORDER = ["omniva", "dpd", "smartpost", "venipak"];
-const RESERVED_SLUGS = new Set(["index", "app", "worker", "theme-init", "city-map", "sitemap", "robots", "readme", "404"]);
+const RESERVED_SLUGS = new Set(["index", "app", "worker", "theme-init", "city-map", "sitemap", "robots", "readme", "404", "privaatsus", "tingimused", "kontakt", "fonts", "vendor"]);
 
 const args = process.argv.slice(2);
 const inputIdx = args.indexOf("--input");
@@ -237,9 +237,7 @@ function renderCityPage(c, related, shared) {
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(url)}">
 <script src="/theme-init.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
 ${shared.css}${EXTRA_CSS}</style>
 <script type="application/ld+json">${jsonForScript(breadcrumbLd)}</script>
@@ -270,6 +268,11 @@ ${shared.css}${EXTRA_CSS}</style>
     <p class="note-updated">Andmed pärinevad vedajate avalikest asukohanimekirjadest, viimati uuendatud ${esc(today)}. Täpsema ja kõige värskema info leiad vedaja enda kodulehelt.</p>
   </section>
 
+  <footer class="note">
+    <p>Asukohaandmed: Omniva, DPD, Smartpost, Venipak, Unisend. Aadressiandmed: Maa- ja Ruumiamet. Kaart: &copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors.</p>
+    <p>Kaugused on sirgjoonelised. Asukohad ja tööajad võivad muutuda; kontrolli neid vedaja rakendusest. Kaubamärgid kuuluvad nende omanikele; leht ei ole vedajatega seotud.</p>
+    <p><a href="/privaatsus.html">Privaatsus</a> &middot; <a href="/tingimused.html">Tingimused</a> &middot; <a href="/kontakt.html">Kontakt</a></p>
+  </footer>
 </div>
 ${shared.leafletTag}
 <script src="/city-map.js"></script>
@@ -314,7 +317,7 @@ async function main() {
 
   const indexHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   const cssMatch = indexHtml.match(/<style>([\s\S]*?)<\/style>/);
-  const leafletMatch = indexHtml.match(/<script src="https:\/\/unpkg\.com\/leaflet@[^>]*><\/script>/);
+  const leafletMatch = indexHtml.match(/<script src="\/vendor\/leaflet\.js"><\/script>/);
   if (!cssMatch || !leafletMatch) throw new Error("index.html-ist ei leitud <style> plokki või Leafleti script-tagi.");
   const shared = { css: cssMatch[1], leafletTag: leafletMatch[0] };
 

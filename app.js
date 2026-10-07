@@ -77,9 +77,9 @@
 
   // ---------- map setup ----------
   var map = L.map("map", { scrollWheelZoom: true, doubleClickZoom: false }).setView([58.8, 25.3], 7);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: "&copy; OpenStreetMap"
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   var markersLayer = L.layerGroup().addTo(map);
@@ -660,7 +660,7 @@
 
     var userMarker = L.marker([pt.lat, pt.lon], { icon: pinIcon("user", "★") })
       .addTo(markersLayer)
-      .bindPopup('<div class="popup-title">Sinu asukoht</div><div class="popup-addr">' + pt.label + "</div>");
+      .bindPopup('<div class="popup-title">Sinu asukoht</div><div class="popup-addr">' + escapeHtml(pt.label) + "</div>");
 
     var bounds = [[pt.lat, pt.lon]];
 
