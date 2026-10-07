@@ -637,7 +637,7 @@ async function fetchUnisendCsv() {
 async function fetchUnisendApi(env) {
   try {
     const token = await unisendToken(env);
-    const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH, {
+    const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH + "?receiverCountryCode=EE", {
       headers: { "User-Agent": UNISEND_UA, Accept: "application/json", Authorization: "Bearer " + token },
     });
     if (!res.ok) throw new Error(`Unisend terminalid: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
