@@ -759,15 +759,23 @@
   // Mobiilis kerime otsingu valikule fookuse saades nii, et otsingukast jääb
   // ekraani ülaserva (klaviatuuri all jääb kaardile rohkem ruumi). Tagasi me
   // ei keri, kui klaviatuur kaob — nii on kaart kohe ilusti nähtaval.
-  addressInputEl.addEventListener("focus", function(){
+  var lastScrollToSearch = 0;
+  function scrollSearchToTop(){
     if (!window.matchMedia("(max-width: 780px)").matches) return;
+    var now = Date.now();
+    if (now - lastScrollToSearch < 500) return; // focus + click tulevad ühest puudutusest
+    lastScrollToSearch = now;
     setTimeout(function(){
       var bar = document.querySelector(".searchbar");
       if (!bar) return;
       var top = bar.getBoundingClientRect().top + window.pageYOffset - 8;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }, 300); // oota, kuni klaviatuur on lõpuni üleval ja vaate kõrgus muutunud
-  });
+  }
+  addressInputEl.addEventListener("focus", scrollSearchToTop);
+  // Kui kursor jäi väljale (fookus on alles), aga kasutaja kerisis lehte ja
+  // puudutab välja uuesti, "focus" enam ei tule — seetõttu ka "click".
+  addressInputEl.addEventListener("click", scrollSearchToTop);
   addressInputEl.addEventListener("blur", function(){
     // Väike viide, et mousedown-põhine valik (vt showLockerSuggestions)
     // jõuaks kohale enne, kui dropdown peidetakse.
