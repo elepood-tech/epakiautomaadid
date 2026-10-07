@@ -605,7 +605,7 @@ async function fetchUnisendCsv() {
       headers: { "User-Agent": UNISEND_UA, Accept: "text/csv,*/*" },
       cf: { cacheTtl: CACHE_TTL_SECONDS },
     });
-    if (!res.ok) throw new Error(`Unisend CSV: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Unisend CSV: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
     const rows = parseCsv(await res.text());
     const out = rows
       .filter((r) => !r.countryCode || r.countryCode === "EE")
@@ -640,7 +640,7 @@ async function fetchUnisendApi(env) {
     const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH, {
       headers: { "User-Agent": UNISEND_UA, Accept: "application/json", Authorization: "Bearer " + token },
     });
-    if (!res.ok) throw new Error(`Unisend terminalid: HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Unisend terminalid: HTTP ${res.status} ${(await res.text()).slice(0, 300)}`);
     const data = await res.json();
     const list = Array.isArray(data) ? data : data?.content || data?.data || data?.terminals || data?.items || [];
     const out = list
