@@ -754,6 +754,18 @@
   addressInputEl.addEventListener("keydown", function(e){
     if (e.key === "Escape") hideAddrDropdown();
   });
+  // Mobiilis kerime otsingu valikule fookuse saades nii, et otsingukast jääb
+  // ekraani ülaserva (klaviatuuri all jääb kaardile rohkem ruumi). Tagasi me
+  // ei keri, kui klaviatuur kaob — nii on kaart kohe ilusti nähtaval.
+  addressInputEl.addEventListener("focus", function(){
+    if (!window.matchMedia("(max-width: 780px)").matches) return;
+    setTimeout(function(){
+      var bar = document.querySelector(".searchbar");
+      if (!bar) return;
+      var top = bar.getBoundingClientRect().top + window.pageYOffset - 8;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }, 300); // oota, kuni klaviatuur on lõpuni üleval ja vaate kõrgus muutunud
+  });
   addressInputEl.addEventListener("blur", function(){
     // Väike viide, et mousedown-põhine valik (vt showLockerSuggestions)
     // jõuaks kohale enne, kui dropdown peidetakse.
