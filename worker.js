@@ -127,10 +127,6 @@ export default {
     }
 
     const source = url.searchParams.get("source"); // "omniva" | "dpd" | "smartpost" | "venipak" | null (kõik)
-    // AJUTINE diagnostika (eemalda pärast keeleküsimuse lahendamist): ?source=unisend&raw=1
-    if (source === "unisend" && url.searchParams.get("raw") === "1") {
-      return unisendRawSample(env);
-    }
     const cacheUrl = new URL(url.toString());
     cacheUrl.searchParams.set("_cv", CACHE_VERSION);
     const cacheKey = new Request(cacheUrl.toString(), request);
@@ -635,24 +631,6 @@ async function fetchUnisendCsv() {
     return { data: out, error: null };
   } catch (err) {
     return { data: [], error: String(err && err.message ? err.message : err) };
-  }
-}
-
-async function unisendRawSample(env) {
-  try {
-    const token = await unisendToken(env);
-    const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH + "?receiverCountryCode=EE", {
-      headers: { "User-Agent": UNISEND_UA, Accept: "application/json", "Accept-Language": "et", Authorization: "Bearer " + token },
-    });
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data?.content || data?.data || [];
-    return new Response(JSON.stringify({ status: res.status, total: list.length, sample: list.slice(0, 3) }), {
-      headers: { ...CORS_HEADERS, "Cache-Control": "no-store" },
-    });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: String(err && err.message ? err.message : err) }), {
-      headers: { ...CORS_HEADERS, "Cache-Control": "no-store" },
-    });
   }
 }
 
