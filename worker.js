@@ -583,10 +583,58 @@ function pick(o, keys) {
   return null;
 }
 
+// Unisend kinnitas kirjalikult (07.10.2026), et ilma API-ta saab kasutada nende
+// avalikku CSV-faili (my.unisend.ee/map), ja API on lepinguklientidele.
+// Seega: kui secretid on, kasutame API-t; muidu (või kui API ebaõnnestub)
+// proovime avalikku CSV-d. Päringul EI ole võltsitud Origin/Referer päiseid;
+// kui server neid nõuab, tuleb Unisendilt küsida otsest allalaadimislinki.
 async function fetchUnisend(env) {
-  if (!env || !env.UNISEND_USER || !env.UNISEND_PASS) {
-    return { data: [], error: "Unisendi ligipääs pole seadistatud (puuduvad secretid)." };
+  const haveCreds = !!(env && env.UNISEND_USER && env.UNISEND_PASS);
+  if (haveCreds) {
+    const viaApi = await fetchUnisendApi(env);
+    if (!viaApi.error) return viaApi;
+    const viaCsv = await fetchUnisendCsv();
+    return viaCsv.error ? { data: [], error: viaApi.error + " | CSV: " + viaCsv.error } : viaCsv;
   }
+  return fetchUnisendCsv();
+}
+
+async function fetchUnisendCsv() {
+  try {
+    const res = await fetch(UNISEND_URL, {
+      headers: { "User-Agent": UNISEND_UA, Accept: "text/csv,*/*" },
+      cf: { cacheTtl: CACHE_TTL_SECONDS },
+    });
+    if (!res.ok) throw new Error(`Unisend CSV: HTTP ${res.status}`);
+    const rows = parseCsv(await res.text());
+    const out = rows
+      .filter((r) => !r.countryCode || r.countryCode === "EE")
+      .map((r) => {
+        const lat = parseFloat(r.latitude);
+        const lon = parseFloat(r.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+        return {
+          source: "unisend",
+          name: r.name || "Unisend asukoht",
+          street: r.address || null,
+          city: r.city || null,
+          county: null,
+          zip: r.postalCode || null,
+          hours: null,
+          locationInfo: r.comment || null,
+          lat,
+          lon,
+        };
+      })
+      .filter(Boolean);
+    if (!out.length) throw new Error("Unisend CSV: ei leidnud kasutatavaid kirjeid");
+    return { data: out, error: null };
+  } catch (err) {
+    return { data: [], error: String(err && err.message ? err.message : err) };
+  }
+}
+
+async function fetchUnisendApi(env) {
   try {
     const token = await unisendToken(env);
     const res = await fetch(UNISEND_API_BASE + UNISEND_TERMINAL_PATH, {
