@@ -415,6 +415,7 @@
 
   function pickAddrCandidate(c){
     hideAddrDropdown();
+    document.getElementById("addressInput").blur(); // sulge mobiilis klaviatuur
     state.userPoint = { lat: c.lat, lon: c.lon, label: c.label };
     var hint = document.getElementById("searchHint");
     hint.className = "hint ok";
@@ -504,6 +505,7 @@
 
   function pickLockerSuggestion(item){
     hideAddrDropdown();
+    document.getElementById("addressInput").blur(); // sulge mobiilis klaviatuur
     document.getElementById("addressInput").value = item.name;
     updateClearBtn();
     state.exactMatches = [item];
