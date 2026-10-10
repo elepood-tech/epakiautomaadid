@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WORKER_URL = process.env.LOCKERS_URL || "https://epakiautomaadid.roolikatted.workers.dev/lockers";
-const SITE_URL = (process.env.SITE_URL || "https://epakiautomaadid.pages.dev").replace(/\/+$/, "");
+const SITE_URL = (process.env.SITE_URL || "https://www.pakiautomaat24.eu").replace(/\/+$/, "");
 const MIN_LOCKERS = Number(process.env.MIN_LOCKERS || 5);
 const MIN_TOTAL_LOCKERS = Number(process.env.MIN_TOTAL_LOCKERS || 500);
 const RELATED_COUNT = 8;
