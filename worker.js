@@ -91,7 +91,12 @@ const MIN_REBUILD_INTERVAL_SECONDS = 5 * 24 * 60 * 60;
 // Ainult meie enda lehele lubatud (mitte "*"), et keegi teine ei saaks seda
 // worker'it (ja meie Cloudflare arvestust) oma lehele "laenata". Kui lisandub
 // oma domeen (mitte *.pages.dev), tuleb see siia samuti lisada.
-const ALLOWED_ORIGIN = "https://epakiautomaadid.pages.dev";
+const ALLOWED_ORIGINS = [
+  "https://www.pakiautomaat24.eu",
+  "https://pakiautomaat24.eu",
+  "https://epakiautomaadid.pages.dev",
+];
+const ALLOWED_ORIGIN = ALLOWED_ORIGINS[0];
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -107,8 +112,21 @@ const UPSTREAM_HEADERS = {
   Accept: "application/json,text/plain,*/*",
 };
 
-export default {
+const worker = {
   async fetch(request, env, ctx) {
+    const res = await worker.handle(request, env, ctx);
+    // Echo'me tagasi ainult lubatud päritolu (vt ALLOWED_ORIGINS).
+    const origin = request.headers.get("Origin");
+    const out = new Response(res.body, res);
+    out.headers.set(
+      "Access-Control-Allow-Origin",
+      ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGIN
+    );
+    out.headers.set("Vary", "Origin");
+    return out;
+  },
+
+  async handle(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -234,6 +252,8 @@ export default {
     return response;
   },
 };
+
+export default worker;
 
 // Käivitab Pages'i deploy hook'i, kuid mitte tihedamini kui
 // MIN_REBUILD_INTERVAL_SECONDS (KV märge). Hook'i URL on salajane ja asub
